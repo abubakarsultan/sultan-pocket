@@ -141,6 +141,14 @@ input,select,textarea{font-family:inherit;}
 .btn-block{width:100%;justify-content:center;}
 .icon-btn{width:30px;height:30px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);display:flex;align-items:center;justify-content:center;font-size:13px;}
 .icon-btn:hover{color:var(--text);border-color:var(--signal-dim);}
+.save-status{font-size:11.5px;color:var(--text-faint);display:flex;align-items:center;gap:5px;min-width:0;transition:opacity .2s ease;opacity:0;}
+.save-status.show{opacity:1;}
+.save-status.err{color:var(--rose);}
+.save-status .dot-spin{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--border);border-top-color:var(--signal);animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.skel{background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:var(--radius-sm);}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none;}}
 /* ---------- Quick actions ---------- */
 .qa-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;}
 .qa-btn{
@@ -257,7 +265,7 @@ tbody tr:hover{background:var(--surface-2);}
 </style>
 </head>
 <body>
-<button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark theme">🌙</button>
+<button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark theme" aria-label="Toggle light and dark theme">🌙</button>
 <div id="authScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
   <div class="panel" style="width:100%;max-width:400px;">
     <div style="text-align:center;margin-bottom:20px;">
@@ -293,7 +301,7 @@ tbody tr:hover{background:var(--surface-2);}
   <div class="main">
     <div class="topbar">
       <div class="topbar-left">
-        <button class="icon-btn mobile-nav-toggle" onclick="toggleSidebar(true)">☰</button>
+        <button class="icon-btn mobile-nav-toggle" onclick="toggleSidebar(true)" aria-label="Open menu">☰</button>
         <div class="page-title" id="pageTitle">Dashboard</div>
         <div class="month-picker">
           <button onclick="shiftMonth(-1)">‹</button>
@@ -302,6 +310,8 @@ tbody tr:hover{background:var(--surface-2);}
         </div>
       </div>
       <div class="topbar-right">
+        <span id="saveStatus" class="save-status" aria-live="polite"></span>
+        <button class="btn btn-ghost btn-sm" onclick="exportDataCSV()" aria-label="Export all data as CSV">⬇ Export</button>
         <button class="btn btn-ghost btn-sm" onclick="openModal('income')">+ Income</button>
         <button class="btn btn-ghost btn-sm" onclick="openModal('expense')">+ Expense</button>
       </div>
@@ -313,12 +323,27 @@ tbody tr:hover{background:var(--surface-2);}
   <div class="modal">
     <div class="modal-head">
       <h3 id="modalTitle">Add</h3>
-      <button class="icon-btn" onclick="closeModal()">✕</button>
+      <button class="icon-btn" onclick="closeModal()" aria-label="Close dialog">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" id="modalSaveBtn" onclick="submitModal()">Save</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px;" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMsg">
+    <div class="modal-head">
+      <h3 id="confirmTitle">Confirm</h3>
+      <button class="icon-btn" onclick="closeConfirm(false)" aria-label="Close dialog">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="margin:0;font-size:13.5px;color:var(--text-dim);line-height:1.5;"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeConfirm(false)">Cancel</button>
+      <button class="btn btn-danger" id="confirmActionBtn" onclick="closeConfirm(true)">Delete</button>
     </div>
   </div>
 </div>
@@ -377,6 +402,7 @@ function fmtShort(n){
   return 'Rs. ' + Math.round(n).toLocaleString('en-US');
 }
 function uid(){ return STATE.nextId++; }
+function escAttr(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); }
 /* ---------------------------- persistence (Supabase, per-user) ---------------------------- */
 async function loadData(){
   try{
@@ -398,22 +424,69 @@ async function loadData(){
   }
 }
 let saveInFlight = false, saveQueued = false;
+let saveStatusHideTimer = null;
+function setSaveStatus(state){
+  const el = document.getElementById('saveStatus');
+  if(!el) return;
+  clearTimeout(saveStatusHideTimer);
+  el.classList.remove('err');
+  if(state==='saving'){
+    el.innerHTML = '<span class="dot-spin"></span> Saving…';
+    el.classList.add('show');
+  } else if(state==='saved'){
+    el.textContent = '✓ Saved';
+    el.classList.add('show');
+    saveStatusHideTimer = setTimeout(()=>el.classList.remove('show'), 2000);
+  } else if(state==='error'){
+    el.textContent = '⚠ Could not save';
+    el.classList.add('show','err');
+  }
+}
 async function saveData(){
   if(!CURRENT_USER) return;
   if(saveInFlight){ saveQueued = true; return; }
   saveInFlight = true;
+  setSaveStatus('saving');
   try{
     const { error } = await sb
       .from('wallet_data')
       .upsert({ user_id: CURRENT_USER.id, data: STATE, updated_at: new Date().toISOString() });
     if(error) throw error;
+    setSaveStatus('saved');
   }catch(e){
     console.error('Save failed', e);
-    showToast('Could not save data. Your changes may not persist.', true);
+    setSaveStatus('error');
+    showToast('Could not save data. Your changes may not persist. Check your connection and try again.', true);
   }finally{
     saveInFlight = false;
     if(saveQueued){ saveQueued = false; saveData(); }
   }
+}
+/* ---------------------------- CSV export (backup) ---------------------------- */
+function csvEscape(v){
+  const s = String(v==null ? '' : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function exportDataCSV(){
+  const list = [...STATE.transactions].sort((a,b)=>a.date.localeCompare(b.date) || a.id-b.id);
+  if(list.length===0){ showToast('No transactions to export yet.', true); return; }
+  const headers = ['Date','Type','Amount','Category/Source','Method','Person','Notes'];
+  const rows = list.map(t=>{
+    const f = txFields(t);
+    return [t.date, typeLabel(t), t.amount, f.catSource, methodOfTx(t), f.person, f.desc]
+      .map(csvEscape).join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sultan-pocket-export-${todayISO()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Export downloaded.');
 }
 /* ---------------------------- categories ---------------------------- */
 function allCategories(){
@@ -743,8 +816,8 @@ function transactionsTable(list, showActions=true){
       <td>${f.person}</td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${f.desc}</td>
       ${showActions?`<td><div class="row-actions">
-        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="editTransaction(${t.id})">✎</button>
-        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="deleteTransaction(${t.id})">✕</button>
+        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="editTransaction(${t.id})" aria-label="Edit ${escAttr(typeLabel(t))} on ${t.date}">✎</button>
+        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="deleteTransaction(${t.id})" aria-label="Delete ${escAttr(typeLabel(t))} on ${t.date}">✕</button>
       </div></td>`:''}
     </tr>`;
   }).join('');
@@ -812,8 +885,9 @@ function renderTxList(){
   list.sort((a,b)=>b.date.localeCompare(a.date) || b.id-a.id);
   wrap.innerHTML = transactionsTable(list, true);
 }
-function deleteTransaction(id){
-  if(!confirm('Delete this transaction? This cannot be undone.')) return;
+async function deleteTransaction(id){
+  const ok = await showConfirm('Delete this transaction? This cannot be undone.', {title:'Delete transaction'});
+  if(!ok) return;
   STATE.transactions = STATE.transactions.filter(t=>t.id!==id);
   saveData();
   renderView();
@@ -863,8 +937,8 @@ function viewSavings(){
       <td>${isAdd? t.method : ('→ '+t.destination)}</td>
       <td>${t.notes||'—'}</td>
       <td><div class="row-actions">
-        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="editTransaction(${t.id})">✎</button>
-        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="deleteTransaction(${t.id})">✕</button>
+        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="editTransaction(${t.id})" aria-label="Edit ${isAdd?'savings addition':'savings use'} on ${t.date}">✎</button>
+        <button class="icon-btn" style="width:26px;height:26px;font-size:11px;" onclick="deleteTransaction(${t.id})" aria-label="Delete ${isAdd?'savings addition':'savings use'} on ${t.date}">✕</button>
       </div></td>
     </tr>`;
   }).join('');
@@ -1046,6 +1120,21 @@ function openModal(kind, editId=null){
 function closeModal(){
   document.getElementById('modalOverlay').classList.remove('active');
   currentModal = {kind:null, editId:null};
+}
+/* ---------------------------- confirm dialog (replaces window.confirm) ---------------------------- */
+let confirmResolve = null;
+function showConfirm(message, opts={}){
+  document.getElementById('confirmTitle').textContent = opts.title || 'Confirm';
+  document.getElementById('confirmMsg').textContent = message;
+  const actionBtn = document.getElementById('confirmActionBtn');
+  actionBtn.textContent = opts.confirmLabel || 'Delete';
+  actionBtn.className = 'btn ' + (opts.danger===false ? 'btn-primary' : 'btn-danger');
+  document.getElementById('confirmOverlay').classList.add('active');
+  return new Promise(resolve=>{ confirmResolve = resolve; });
+}
+function closeConfirm(result){
+  document.getElementById('confirmOverlay').classList.remove('active');
+  if(confirmResolve){ confirmResolve(result); confirmResolve = null; }
 }
 function editTransaction(id){
   const t = STATE.transactions.find(x=>x.id===id);
@@ -1309,7 +1398,7 @@ function setAuthTab(tab){
 function pwField(id, label, placeholder, autocomplete){
   return `<div class="field"><label>${label}</label><div class="pw-wrap">
     <input type="password" id="${id}" autocomplete="${autocomplete}" placeholder="${placeholder||''}">
-    <button type="button" class="pw-eye" onclick="togglePwVisibility('${id}', this)" title="Show/hide password">👁</button>
+    <button type="button" class="pw-eye" onclick="togglePwVisibility('${id}', this)" title="Show/hide password" aria-label="Show password">👁</button>
   </div></div>`;
 }
 function togglePwVisibility(id, btn){
@@ -1317,6 +1406,7 @@ function togglePwVisibility(id, btn){
   const showing = inp.type === 'text';
   inp.type = showing ? 'password' : 'text';
   btn.textContent = showing ? '👁' : '🙈';
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
 }
 function renderAuthForm(){
   const wrap = document.getElementById('authFormWrap');
@@ -1410,9 +1500,19 @@ function showApp(){
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('appShell').style.display = 'flex';
 }
+function skeletonView(){
+  const card = `<div class="card" style="height:78px;"><div class="skel" style="width:60%;height:11px;margin-bottom:12px;"></div><div class="skel" style="width:40%;height:20px;"></div></div>`;
+  return `
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px;">
+    ${card}${card}${card}
+  </div>
+  <div class="skel" style="width:100%;height:220px;border-radius:14px;"></div>`;
+}
 async function onAuthenticated(user){
   CURRENT_USER = user;
   showApp();
+  const content = document.getElementById('content');
+  if(content) content.innerHTML = skeletonView();
   await loadData();
   CURRENT_MONTH = todayISO().slice(0,7);
   renderNav();
@@ -1448,8 +1548,11 @@ async function init(){
   document.getElementById('modalOverlay').addEventListener('click', (e)=>{
     if(e.target.id==='modalOverlay') closeModal();
   });
+  document.getElementById('confirmOverlay').addEventListener('click', (e)=>{
+    if(e.target.id==='confirmOverlay') closeConfirm(false);
+  });
   document.addEventListener('keydown', (e)=>{
-    if(e.key==='Escape') closeModal();
+    if(e.key==='Escape'){ closeModal(); closeConfirm(false); }
   });
   renderAuthForm();
   const { data: { session } } = await sb.auth.getSession();
