@@ -16,7 +16,7 @@ export default function HomePage() {
         <p style={{ fontSize: 16, color: 'var(--text-dim)', maxWidth: 480, margin: '0 auto 28px' }}>
           Track expenses, plan budgets, and grow savings — all your personal finance tools in one place.
         </p>
-        <Link href="/signup" className="btn btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
+        <Link href="/signin" className="btn btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
           Get started free
         </Link>
       </section>
@@ -24,6 +24,15 @@ export default function HomePage() {
       <section className="container" style={{ paddingBottom: 60 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 14 }}>
           {TOOLS.map((t) => (
+            t.name === 'Expense tracker' ? (
+              <Link key={t.name} href="/dashboard/wallet" className="card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--signal-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, marginBottom: 14 }}>
+                  {t.icon}
+                </div>
+                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{t.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-faint)' }}>{t.desc}</div>
+              </Link>
+            ) : (
             <div key={t.name} className="card">
               <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--signal-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, marginBottom: 14 }}>
                 {t.icon}
@@ -31,6 +40,7 @@ export default function HomePage() {
               <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{t.name}</div>
               <div style={{ fontSize: 13, color: 'var(--text-faint)' }}>{t.desc}</div>
             </div>
+            )
           ))}
         </div>
       </section>

@@ -1,0 +1,9 @@
+-- Sultan Pocket Wallet migration note
+-- This build intentionally starts with empty per-row Wallet tables.
+-- Existing legacy wallet_data JSONB is not read by the new app.
+-- If the old data is only test data, run the cleanup below after verifying the new schema:
+-- delete from public.wallet_data;
+--
+-- For a production account migration, write a controlled one-time migration that
+-- transforms wallet_data.data.transactions into wallet_transactions before deleting
+-- the legacy table. Do not run an automatic destructive migration.

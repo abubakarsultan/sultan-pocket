@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function SignInPage() {
@@ -52,12 +53,13 @@ export default function SignInPage() {
           <label>Password</label>
           <div style={{ position: 'relative' }}>
             <input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} style={{ paddingRight: 38 }} />
-            <button type="button" onClick={() => setShowPw((s) => !s)} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 14 }}>
+            <button type="button" aria-label={showPw ? 'Hide password' : 'Show password'} onClick={() => setShowPw((s) => !s)} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 14 }}>
               {showPw ? '🙈' : '👁'}
             </button>
           </div>
         </div>
         <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <p style={{fontSize:12.5,textAlign:'right',marginTop:8}}><Link href="/forgot-password" style={{color:'var(--signal)',fontWeight:600}}>Forgot password?</Link></p>
         <p style={{ fontSize: 12.5, color: 'var(--text-faint)', textAlign: 'center', marginTop: 14 }}>
           Don't have an account? <a href="/signup" style={{ color: 'var(--signal)', fontWeight: 600 }}>Sign up</a>
         </p>

@@ -173,3 +173,5 @@ input,select,textarea{font-family:inherit;}
   .wallet-month{flex:1}
   .wallet-topbar h1{font-size:18px}
 }
+.theme-picker{padding:10px 8px;border-top:1px solid var(--border);margin-top:4px}.theme-picker>span{display:block;font-size:10px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}.theme-options{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.theme-options button{border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);border-radius:8px;padding:7px 4px;font-size:10px}.theme-options button:hover,.theme-options button.active{border-color:var(--signal);color:var(--signal);background:var(--signal-tint)}.profile-delete-btn{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--border));}.profile-delete-btn:hover{border-color:var(--danger)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--signal);outline-offset:2px}

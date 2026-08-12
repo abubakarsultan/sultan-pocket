@@ -2,7 +2,7 @@
 
 import {useEffect,useMemo,useState} from 'react';
 import {useWallet} from './WalletProvider';
-import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,debtSnapshot,money} from '@/lib/wallet/calc';
+import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,firstDayOfMonth,debtSnapshot,money} from '@/lib/wallet/calc';
 
 const BASE={
   type:'expense',amount:'',date:todayISO(),category:'Food',method:'cash',
@@ -16,7 +16,7 @@ const TITLES={
 function normalizeType(t){return t==='income_other'||t==='salary'?'income':t;}
 
 export default function WalletModal(){
-  const {user,add,update,addCategory,state,notify}=useWallet();
+  const {user,add,update,addCategory,state,notify,month}=useWallet();
   const [open,setOpen]=useState(false);
   const [kind,setKind]=useState('expense');
   const [editingId,setEditingId]=useState(null);
@@ -37,7 +37,7 @@ export default function WalletModal(){
         ...BASE,
         ...preset,
         type:nextKind,
-        date:todayISO(),
+        date:month===todayISO().slice(0,7)?todayISO():firstDayOfMonth(month),
         category:nextKind==='income'?'Monthly Salary':nextKind==='expense'?(preset.category||'Food'):'Food',
         from:nextKind==='withdraw'?'online':(preset.from||'cash'),
         method:nextKind==='expense'&&preset.category==='Transport'?(preset.method||'etransit'):(preset.method||'cash'),

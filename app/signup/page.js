@@ -9,7 +9,7 @@ function PasswordField({ label, value, onChange, placeholder }) {
       <label>{label}</label>
       <div style={{ position: 'relative' }}>
         <input type={show ? 'text' : 'password'} value={value} onChange={onChange} placeholder={placeholder} style={{ paddingRight: 38 }} />
-        <button type="button" onClick={() => setShow((s) => !s)} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 14 }}>
+        <button type="button" aria-label={show ? 'Hide password' : 'Show password'} onClick={() => setShow((s) => !s)} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 14 }}>
           {show ? '🙈' : '👁'}
         </button>
       </div>

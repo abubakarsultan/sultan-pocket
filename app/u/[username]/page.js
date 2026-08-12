@@ -93,6 +93,17 @@ export default function ProfilePage(){
     router.push('/signin');
   }
 
+  async function deleteAccount(){
+    const confirmed=window.confirm('Delete your account permanently? This removes your account and Wallet data and cannot be undone.');
+    if(!confirmed)return;
+    setBusy(true);setError('');
+    const {error:e}=await supabase.rpc('delete_my_account');
+    setBusy(false);
+    if(e){setError(e.message||'Could not delete your account.');return;}
+    await supabase.auth.signOut();
+    router.replace('/');
+  }
+
   return <main className="profile-page">
     <section className="profile-card">
       <div className="profile-cover">
@@ -150,7 +161,7 @@ export default function ProfilePage(){
           <p className="profile-help">Your profile and Wallet data are private. Sign out when using a shared device.</p>
         </section>
 
-        <section className="profile-danger"><h2>Account actions</h2><button className="btn profile-signout-btn" onClick={signOut}>Sign out</button></section>
+        <section className="profile-danger"><h2>Account actions</h2><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="btn profile-signout-btn" onClick={signOut} disabled={busy}>Sign out</button><button className="btn profile-delete-btn" onClick={deleteAccount} disabled={busy}>Delete account</button></div><p className="profile-help">Deleting your account permanently removes your account and Wallet data.</p></section>
       </div>}
     </section>
   </main>;

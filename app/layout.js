@@ -2,6 +2,7 @@ import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ThemeManager from '@/components/ThemeManager';
 
 export const metadata = {
   title: 'Sultan Pocket — Manage your money, your way',
@@ -18,8 +19,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
+        <ThemeManager />
         <AuthProvider>
           <Navbar />
           {children}
