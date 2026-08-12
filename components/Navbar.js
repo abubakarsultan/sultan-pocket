@@ -23,7 +23,7 @@ export default function Navbar() {
           {loading ? null : user ? (
             <>
               <Link href="/dashboard" className="btn btn-ghost">Dashboard</Link>
-              <button className="btn" onClick={() => supabase.auth.signOut()}>Sign out</button>
+              <ProfileMenu compact />
             </>
           ) : (
             <>
