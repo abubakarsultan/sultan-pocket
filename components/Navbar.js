@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
+import ProfileMenu from './ProfileMenu';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Navbar() {
