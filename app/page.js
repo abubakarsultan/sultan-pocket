@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 const TOOLS = [
-  { icon: '💳', name: 'Expense tracker', desc: 'Log spending across cash and online, organized by category.', href: '/dashboard/wallet' },
+  { icon: '💳', name: 'Expense tracker', desc: 'Log spending across cash and online, organized by category.' },
   { icon: '📊', name: 'Budget planner', desc: 'Set monthly limits per category and stay on track.' },
   { icon: '🐖', name: 'Savings goals', desc: 'Set money aside and watch your progress grow.' },
 ];
@@ -13,34 +13,17 @@ export default function HomePage() {
         <h1 style={{ fontSize: 40, fontWeight: 700, marginBottom: 14, lineHeight: 1.15 }}>
           Manage your money,<br />your way
         </h1>
-
         <p style={{ fontSize: 16, color: 'var(--text-dim)', maxWidth: 480, margin: '0 auto 28px' }}>
           Track expenses, plan budgets, and grow savings — all your personal finance tools in one place.
         </p>
-<<<<<<< HEAD
         <Link href="/signin" className="btn btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
-=======
-
-        <Link
-          href="/signin"
-          className="btn btn-primary"
-          style={{ padding: '13px 28px', fontSize: 15 }}
-        >
->>>>>>> 415c026c5608d99b36bcf361e75a78b209278cbb
           Get started free
         </Link>
       </section>
 
       <section className="container" style={{ paddingBottom: 60 }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
-            gap: 14
-          }}
-        >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 14 }}>
           {TOOLS.map((t) => (
-<<<<<<< HEAD
             t.name === 'Expense tracker' ? (
               <Link key={t.name} href="/dashboard/wallet" className="card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--signal-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, marginBottom: 14 }}>
@@ -57,69 +40,6 @@ export default function HomePage() {
               <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{t.name}</div>
               <div style={{ fontSize: 13, color: 'var(--text-faint)' }}>{t.desc}</div>
             </div>
-=======
-            t.href ? (
-              <Link
-                key={t.name}
-                href={t.href}
-                className="card"
-                style={{
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  display: 'block'
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: 'var(--signal-tint)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 19,
-                    marginBottom: 14
-                  }}
-                >
-                  {t.icon}
-                </div>
-
-                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>
-                  {t.name}
-                </div>
-
-                <div style={{ fontSize: 13, color: 'var(--text-faint)' }}>
-                  {t.desc}
-                </div>
-              </Link>
-            ) : (
-              <div key={t.name} className="card">
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: 'var(--signal-tint)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 19,
-                    marginBottom: 14
-                  }}
-                >
-                  {t.icon}
-                </div>
-
-                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>
-                  {t.name}
-                </div>
-
-                <div style={{ fontSize: 13, color: 'var(--text-faint)' }}>
-                  {t.desc}
-                </div>
-              </div>
->>>>>>> 415c026c5608d99b36bcf361e75a78b209278cbb
             )
           ))}
         </div>
