@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from './AuthProvider';
 import ProfileMenu from './ProfileMenu';
 import { supabase } from '@/lib/supabaseClient';
@@ -10,8 +11,15 @@ export default function Navbar() {
   return (
     <header style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 50 }}>
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px' }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--signal)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>SP</div>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <Image
+            src="/logo.png"
+            alt="Sultan Pocket"
+            width={34}
+            height={34}
+            priority
+            style={{ width: 34, height: 34, objectFit: 'contain', borderRadius: 9 }}
+          />
           <span style={{ fontWeight: 600, fontSize: 15 }}>Sultan Pocket</span>
         </Link>
         <nav style={{ display: 'flex', gap: 22, fontSize: 13.5, color: 'var(--text-dim)' }} className="nav-links">

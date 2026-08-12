@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 
 function PasswordField({ label, value, onChange, placeholder }) {
@@ -79,6 +80,16 @@ export default function SignUpPage() {
   return (
     <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <form onSubmit={handleSubmit} className="card" style={{ width: '100%', maxWidth: 400 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+          <Image
+            src="/logo.png"
+            alt="Sultan Pocket"
+            width={64}
+            height={64}
+            priority
+            style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 16 }}
+          />
+        </div>
         <h1 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>Create your account</h1>
         <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>Join Sultan Pocket, it's free</p>
         {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
