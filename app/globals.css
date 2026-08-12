@@ -128,3 +128,48 @@ input,select,textarea{font-family:inherit;}
 /* Private profile page */
 .profile-page{min-height:70vh;padding:45px 20px;background:var(--bg)}.profile-card{max-width:900px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden}.profile-cover{display:flex;align-items:center;gap:18px;padding:28px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--surface),var(--signal-tint))}.profile-large-avatar{width:82px;height:82px;border-radius:50%;display:grid;place-items:center;background:var(--signal);color:#fff;font-size:30px;font-weight:800;overflow:hidden;border:4px solid var(--surface)}.profile-large-avatar img{width:100%;height:100%;object-fit:cover}.profile-cover>div:nth-child(2){flex:1}.profile-private{font-size:9px;letter-spacing:.1em;color:var(--text-faint);font-weight:800}.profile-cover h1{font-size:24px;margin:4px 0}.profile-cover p{font-size:12px;color:var(--text-faint)}.profile-edit-btn{white-space:nowrap}.profile-notice{margin:18px 28px 0;padding:10px 12px;border-radius:9px;font-size:12px}.profile-notice.success{background:color-mix(in srgb,var(--success) 10%,transparent);color:var(--success)}.profile-notice.error{background:color-mix(in srgb,var(--danger) 10%,transparent);color:var(--danger)}.profile-sections,.profile-form{padding:25px 28px}.profile-sections section{padding:0 0 24px;margin-bottom:24px;border-bottom:1px solid var(--border)}.profile-sections section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}.profile-sections h2{font-size:15px;margin-bottom:14px}.profile-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.profile-detail{padding:13px;border:1px solid var(--border);background:var(--surface-2);border-radius:10px;display:grid;gap:5px}.profile-detail span{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em}.profile-detail strong{font-size:12px;overflow-wrap:anywhere}.profile-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.profile-form .field textarea,.profile-form .field select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-size:13px;outline:none}.profile-form .field textarea{min-height:100px;resize:vertical}.profile-full{grid-column:1/-1}.profile-form-actions{display:flex;justify-content:flex-end;border-top:1px solid var(--border);padding-top:18px;margin-top:8px}.password-row{display:flex;gap:8px;flex-wrap:wrap}.password-row input{flex:1;min-width:200px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:10px 12px}.profile-signout-btn{color:var(--danger)}.profile-help{font-size:11px;color:var(--text-faint);margin-top:10px}
 @media(max-width:620px){.profile-cover{align-items:flex-start;flex-wrap:wrap}.profile-cover>div:nth-child(2){min-width:calc(100% - 110px)}.profile-edit-btn{margin-left:100px}.profile-detail-grid,.profile-form-grid{grid-template-columns:1fr}.profile-full{grid-column:auto}.profile-sections,.profile-form{padding:20px}.profile-cover{padding:20px}.profile-notice{margin-left:20px;margin-right:20px}}
+
+/* Final Wallet polish */
+.wallet-action-note{display:block;margin-top:12px;color:var(--text-faint);font-size:10px}
+.wallet-readonly-note{margin:-3px 0 14px;padding:9px 11px;border-radius:9px;background:var(--surface-2);color:var(--text-faint);font-size:11px;border:1px solid var(--border)}
+.wallet-text-link{font-size:11px;color:var(--signal);font-weight:700}
+.wallet-panel-tools{display:flex;align-items:center;gap:8px}
+.export-btn{color:var(--signal)}
+.table-actions{display:flex;align-items:center;gap:9px}
+.table-action.edit{color:var(--signal)}
+.table-locked{font-size:10px;color:var(--text-faint)}
+.pill-salary,.pill-income_other{background:color-mix(in srgb,var(--success) 12%,var(--surface-2));color:var(--success)}
+.pill-expense{background:color-mix(in srgb,var(--danger) 10%,var(--surface-2));color:var(--danger)}
+.pill-borrow,.pill-repay{background:color-mix(in srgb,#D99B00 12%,var(--surface-2))}
+.carry-values{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.carry-values span{padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);font-size:10px;color:var(--text-faint)}
+.carry-values b{display:block;color:var(--text);font-size:12px;margin-top:3px}
+.carry-values>strong{font-size:24px;margin-left:4px}
+.category-helper{color:var(--text-dim);font-size:11px}
+.category-helper small{display:block;margin-top:5px;color:var(--text-faint);font-size:10px}
+.profile-danger{border-top:1px solid var(--border)!important;padding-top:24px!important}
+.profile-danger h2{margin-bottom:12px}
+@media(max-width:760px){
+  .wallet-shell{display:block}
+  .wallet-sidebar{width:100%;height:auto;position:relative;top:auto;border-right:0;border-bottom:1px solid var(--border);padding:10px 12px}
+  .wallet-brand{padding:5px 6px 10px;margin-bottom:8px}
+  .wallet-sidebar nav{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .wallet-sidebar nav a{white-space:nowrap;padding:8px 10px}
+  .wallet-side-foot{display:flex;flex-wrap:wrap;margin-top:8px;padding:9px 6px 0}
+  .wallet-topbar{padding:13px 15px}
+  .wallet-content{padding:18px 14px 40px}
+  .wallet-grid.four,.wallet-grid.three,.wallet-grid.two{grid-template-columns:1fr}
+  .wallet-chart-grid{grid-template-columns:1fr}
+  .wallet-action-grid{grid-template-columns:1fr 1fr}
+  .wallet-card strong{font-size:22px}
+  .wallet-month{min-width:90px}
+  .carry-values{width:100%}
+  .carry-values>strong{margin-left:auto}
+}
+@media(max-width:430px){
+  .wallet-action-grid{grid-template-columns:1fr}
+  .wallet-actions{width:100%}
+  .wallet-actions .wallet-btn.primary,.wallet-actions .wallet-btn.danger{flex:1}
+  .wallet-month{flex:1}
+  .wallet-topbar h1{font-size:18px}
+}
