@@ -44,7 +44,45 @@ export default function WalletModal(){
     <label>Category<select value={form.category} onChange={e=>setField('category',e.target.value)}>{INCOME_CATEGORIES.concat(custom).filter((v,i,a)=>a.indexOf(v)===i).map(c=><option key={c} value={c}>{c}</option>)}</select><button type="button" className="inline-add" onClick={()=>document.getElementById('wallet-new-category')?.focus()}>+ Add category</button></label>
     <label>Payment method<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>
    </>}
-   {isBorrow||isRepay?<><label>Person<input value={form.person} onChange={e=>setField('person',e.target.value)} placeholder="Person name" required/></label><label>Payment method<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>{isBorrow&&<label>Repayment required<select value={form.repayRequired?'yes':'no'} onChange={e=>setField('repayRequired',e.target.value==='yes')}><option value="yes">Yes</option><option value="no">No</option></select></label></> : null}
+   {(isBorrow || isRepay) && (
+    <>
+     <label>
+      Person
+      <input
+       value={form.person}
+       onChange={(event) => setField('person', event.target.value)}
+       placeholder="Person name"
+       required
+      />
+     </label>
+
+     <label>
+      Payment method
+      <select
+       value={form.method}
+       onChange={(event) => setField('method', event.target.value)}
+      >
+       <option value="cash">Cash</option>
+       <option value="online">Online</option>
+      </select>
+     </label>
+
+     {isBorrow && (
+      <label>
+       Repayment required
+       <select
+        value={form.repayRequired ? 'yes' : 'no'}
+        onChange={(event) =>
+         setField('repayRequired', event.target.value === 'yes')
+        }
+       >
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+       </select>
+      </label>
+     )}
+    </>
+   )}
    {isSavings&&<label>{kind==='savings_add'?'Save from':'Return to'}<select value={kind==='savings_add'?form.method:form.destination} onChange={e=>setField(kind==='savings_add'?'method':'destination',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>}
    {isTransit&&<label>Load from<select value={form.from} onChange={e=>setField('from',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>}
    {isTransfer&&<><label>{kind==='withdraw'?'Withdraw from':'Transfer from'}<select value={form.from} onChange={e=>setField('from',e.target.value)}><option value="online">Online</option><option value="cash">Cash</option></select></label>{kind==='transfer'&&<label>Transfer to<select value={form.from==='cash'?'online':'cash'} onChange={e=>setField('from',e.target.value==='online'?'cash':'online')}><option value="online">Online</option><option value="cash">Cash</option></select></label>}</>}
