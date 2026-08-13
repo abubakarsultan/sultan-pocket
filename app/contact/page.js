@@ -1,12 +1,11 @@
-export const metadata = { title: 'Contact — Sultan Pocket' };
+'use client';
+import { useState } from 'react';
 
 export default function ContactPage() {
-  return (
-    <main className="container" style={{ padding: '56px 24px' }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 10 }}>Contact us</h1>
-      <p style={{ fontSize: 14, color: 'var(--text-dim)', maxWidth: 560 }}>
-        Questions or feedback? Reach out anytime.
-      </p>
-    </main>
-  );
+  const [sent, setSent] = useState(false);
+  function handleSubmit(e) { e.preventDefault(); setSent(true); }
+  return <main>
+    <section className="page-hero"><div className="container narrow"><span className="section-label">GET IN TOUCH</span><h1>We'd love to hear from you.</h1><p>Have a question, found an issue, or have an idea for Sultan Pocket? Send us a message.</p></div></section>
+    <section className="section-block"><div className="container contact-grid"><div><h2>Contact Sultan Pocket</h2><p>For product questions, feedback, or feature suggestions, use the form. We will keep improving the experience around the things that matter most to personal money management.</p><div className="contact-points"><div><span>💬</span><strong>Product feedback</strong><small>Tell us what would make your wallet easier to use.</small></div><div><span>🐞</span><strong>Bug reports</strong><small>Include the page and steps that caused the issue.</small></div><div><span>💡</span><strong>Feature ideas</strong><small>Share the money-management feature you want next.</small></div></div></div><form className="contact-form card" onSubmit={handleSubmit}>{sent && <div className="form-notice" style={{display:'block',marginBottom:12}}>Thanks! Your message has been recorded for this demo form.</div>}<div className="form-row"><div className="field"><label htmlFor="contact-name">Name</label><input id="contact-name" required placeholder="Your name" /></div><div className="field"><label htmlFor="contact-email">Email</label><input id="contact-email" type="email" required placeholder="you@email.com" /></div></div><div className="field"><label htmlFor="contact-subject">Subject</label><input id="contact-subject" required placeholder="How can we help?" /></div><div className="field"><label htmlFor="contact-message">Message</label><textarea id="contact-message" required placeholder="Write your message..." /></div><button className="btn btn-primary" type="submit">Send message →</button><p className="contact-note">This form is currently a front-end contact form. Connect it to your email or backend when you are ready for production submissions.</p></form></div></section>
+  </main>;
 }

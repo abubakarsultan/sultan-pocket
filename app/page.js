@@ -1,48 +1,104 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
-const TOOLS = [
-  { icon: '💳', name: 'Expense tracker', desc: 'Log spending across cash and online, organized by category.' },
-  { icon: '📊', name: 'Budget planner', desc: 'Set monthly limits per category and stay on track.' },
-  { icon: '🐖', name: 'Savings goals', desc: 'Set money aside and watch your progress grow.' },
+const FEATURES = [
+  { icon: '💳', title: 'Expense tracking', desc: 'Record everyday spending across cash, online payments, and transport in one organized wallet.', href: '/dashboard/wallet' },
+  { icon: '💰', title: 'Income tracking', desc: 'Keep your salary and other income visible so you always know where your money comes from.', href: '/dashboard/wallet' },
+  { icon: '🎯', title: 'Savings goals', desc: 'Move money into savings and track how much you have set aside over time.', href: '/services' },
+  { icon: '📊', title: 'Clear insights', desc: 'Understand your spending with monthly summaries, categories, balances, and wallet activity.', href: '/dashboard/wallet' },
+  { icon: '🔄', title: 'Easy transfers', desc: 'Move money between Cash and Online without creating unnecessary income or expense entries.', href: '/services' },
+  { icon: '🛡️', title: 'Your personal wallet', desc: 'Your account keeps your financial records separate and accessible when you sign in.', href: '/privacy' },
+];
+
+const STEPS = [
+  ['01', 'Create your account', 'Sign up with your name, username, email, and password.'],
+  ['02', 'Record your money', 'Add income, expenses, transfers, savings, borrowing, and repayments.'],
+  ['03', 'Understand your month', 'Use your wallet and reports to see where your money is going.'],
+];
+
+const FAQS = [
+  ['Is Sultan Pocket free?', 'Yes. Sultan Pocket is designed as a simple personal finance tool for managing your own wallet and expenses.'],
+  ['Can I track both cash and online money?', 'Yes. The wallet separates Cash and Online balances and supports transfers between them.'],
+  ['Can I track savings and borrowed money?', 'Yes. The wallet supports savings, borrowing, repayment, and related balance movements.'],
+  ['Is my financial data public?', 'No. Your wallet is tied to your account. Public profile information is separate from private wallet records.'],
 ];
 
 export default function HomePage() {
   return (
     <main>
-      <section style={{ textAlign: 'center', padding: '80px 24px 56px' }}>
-        <h1 style={{ fontSize: 40, fontWeight: 700, marginBottom: 14, lineHeight: 1.15 }}>
-          Manage your money,<br />your way
-        </h1>
-        <p style={{ fontSize: 16, color: 'var(--text-dim)', maxWidth: 480, margin: '0 auto 28px' }}>
-          Track expenses, plan budgets, and grow savings — all your personal finance tools in one place.
-        </p>
-        <Link href="/signin" className="btn btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
-          Get started free
-        </Link>
+      <section className="hero-section">
+        <div className="container hero-grid">
+          <div className="hero-copy">
+            <div className="eyebrow"><Image src="/logo.png" alt="" width={28} height={28} /> Personal finance, made simple</div>
+            <h1>Manage your money,<br /><span>your way.</span></h1>
+            <p>Track expenses, record income, manage savings, and understand your monthly money flow — all from one simple personal wallet.</p>
+            <div className="hero-actions">
+              <Link href="/signup" className="btn btn-primary hero-btn">Get started free →</Link>
+              <Link href="/dashboard/wallet" className="btn hero-btn-secondary">Open expense tracker</Link>
+            </div>
+            <div className="hero-trust"><span>✓ Cash & Online</span><span>✓ Savings</span><span>✓ Monthly tracking</span></div>
+          </div>
+
+          <div className="hero-visual" aria-label="Sultan Pocket wallet preview">
+            <div className="preview-window">
+              <div className="preview-top"><span>WALLET OVERVIEW</span><span className="preview-dot">●</span></div>
+              <div className="preview-balance"><small>Available balance</small><strong>Rs. 48,250</strong><span>+ Rs. 60,000 income this month</span></div>
+              <div className="preview-cards">
+                <div><small>Cash</small><b>Rs. 18,750</b></div>
+                <div><small>Online</small><b>Rs. 29,500</b></div>
+              </div>
+              <div className="preview-list">
+                <div><span className="preview-icon expense">−</span><span><b>Food</b><small>Today · Cash</small></span><strong>− Rs. 850</strong></div>
+                <div><span className="preview-icon income">+</span><span><b>Monthly Salary</b><small>Aug 1 · Online</small></span><strong>+ Rs. 60,000</strong></div>
+                <div><span className="preview-icon save">↗</span><span><b>Savings</b><small>Aug 5 · Cash</small></span><strong>− Rs. 10,000</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section className="container" style={{ paddingBottom: 60 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 14 }}>
-          {TOOLS.map((t) => (
-            t.name === 'Expense tracker' ? (
-              <Link key={t.name} href="/dashboard/wallet" className="card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--signal-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, marginBottom: 14 }}>
-                  {t.icon}
-                </div>
-                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{t.name}</div>
-                <div style={{ fontSize: 13, color: 'var(--text-faint)' }}>{t.desc}</div>
+      <section className="section-block">
+        <div className="container">
+          <div className="section-heading"><span>WHAT YOU CAN DO</span><h2>Everything you need for everyday money.</h2><p>Keep your personal finances organized without turning money management into a complicated spreadsheet.</p></div>
+          <div className="feature-grid">
+            {FEATURES.map((feature) => (
+              <Link key={feature.title} href={feature.href} className="feature-card">
+                <span className="feature-icon">{feature.icon}</span>
+                <h3>{feature.title}</h3>
+                <p>{feature.desc}</p>
+                <span className="feature-link">Explore →</span>
               </Link>
-            ) : (
-            <div key={t.name} className="card">
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--signal-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, marginBottom: 14 }}>
-                {t.icon}
-              </div>
-              <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{t.name}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-faint)' }}>{t.desc}</div>
-            </div>
-            )
-          ))}
+            ))}
+          </div>
         </div>
+      </section>
+
+      <section className="section-block section-muted">
+        <div className="container">
+          <div className="section-heading"><span>HOW IT WORKS</span><h2>Simple from day one.</h2><p>Start small, keep your records consistent, and let your wallet tell the story of your money.</p></div>
+          <div className="steps-grid">
+            {STEPS.map(([number, title, desc]) => <div className="step-card" key={number}><span>{number}</span><h3>{title}</h3><p>{desc}</p></div>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="section-block">
+        <div className="container split-section">
+          <div><span className="section-label">BUILT FOR REAL LIFE</span><h2>Know your balance before the month knows you.</h2><p>Whether you are paying bills, receiving your monthly salary, saving for something important, or simply trying to understand your spending, Sultan Pocket gives every transaction a place.</p><Link href="/services" className="text-cta">See all features →</Link></div>
+          <div className="benefit-list"><div><b>01</b><span><strong>Separate money clearly</strong><small>Cash, Online, Savings and E-Transit stay easy to understand.</small></span></div><div><b>02</b><span><strong>Record the movement</strong><small>Transfers move balances instead of pretending they are new income or expenses.</small></span></div><div><b>03</b><span><strong>Review your month</strong><small>Use your transaction history and wallet insights to make better decisions.</small></span></div></div>
+        </div>
+      </section>
+
+      <section className="section-block section-muted">
+        <div className="container">
+          <div className="section-heading"><span>FAQ</span><h2>Questions, answered.</h2></div>
+          <div className="faq-grid">{FAQS.map(([q, a]) => <div className="faq-card" key={q}><h3>{q}</h3><p>{a}</p></div>)}</div>
+          <div className="center-link"><Link href="/faq" className="text-cta">View all FAQs →</Link></div>
+        </div>
+      </section>
+
+      <section className="final-cta">
+        <div className="container"><Image src="/logo.png" alt="Sultan Pocket" width={52} height={52} /><h2>Ready to take control of your wallet?</h2><p>Create your free account and start tracking your money today.</p><Link href="/signup" className="btn btn-primary hero-btn">Create my account →</Link></div>
       </section>
     </main>
   );
