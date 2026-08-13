@@ -65,7 +65,7 @@ function useData(){
   return {user,tx,month,s,b:s.balances,state};
 }
 
-export function Dashboard(){return <Page title="Wallet overview"><DashboardInner/></Page>}
+export function Dashboard(){return <Page title="Expense Tracker"><DashboardInner/></Page>}
 
 function DashboardInner(){
   const {user,tx,month,s,b}=useData();
@@ -228,6 +228,26 @@ function TxTable({tx,empty}){
           </tr>
         )}</tbody>
       </table>
+    </div>
+    <div className="wallet-mobile-transactions">
+      {tx.map(t=><article className="wallet-mobile-tx" key={`mobile-${t.id}`}>
+        <div className="wallet-mobile-tx-top">
+          <span className={`wallet-pill pill-${t.type}`}>{transactionLabel(t)}</span>
+          <time>{t.date}</time>
+        </div>
+        <div className="wallet-mobile-tx-main">
+          <div>
+            <strong>{t.category||t.source||t.person||t.notes||'Transaction'}</strong>
+            {t.person&&<small>{t.person}</small>}
+            <small>{displayMethod(t.method||t.from)}</small>
+          </div>
+          <b className={['salary','income_other','borrow','savings_use'].includes(t.type)?'positive':'negative'}>{money(t.amount)}</b>
+        </div>
+        <div className="wallet-mobile-tx-actions">
+          {user&&<><button className="table-action edit" onClick={()=>window.dispatchEvent(new CustomEvent('wallet:edit',{detail:t}))}>Edit</button><button className="table-action delete" onClick={()=>setConfirmId(t.id)}>Delete</button></>}
+          {!user&&<span className="table-locked">Read only</span>}
+        </div>
+      </article>)}
     </div>
     {confirmId!==null&&<ConfirmDelete transaction={confirmTx} close={()=>setConfirmId(null)} confirm={async()=>{await remove(confirmId);setConfirmId(null)}}/>}
   </>;

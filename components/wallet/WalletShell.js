@@ -16,7 +16,7 @@ const NAV=[
   ['/dashboard/wallet/charts','◒','Charts & Stats']
 ];
 
-export default function WalletShell({children,title='Expense Tracker'}){
+export default function WalletShell({children,title='Wallet'}){
   const p=usePathname(),r=useRouter();
   const {user,saving,month,setMonth}=useWallet();
   const [gate,setGate]=useState(false);
@@ -31,7 +31,7 @@ export default function WalletShell({children,title='Expense Tracker'}){
 
   return <div className="wallet-shell">
     <aside className="wallet-sidebar">
-      <Link href="/dashboard/wallet" className="wallet-brand"><span aria-hidden="true">💳</span><b>Expense Tracker</b></Link>
+      <Link href="/dashboard/wallet" className="wallet-brand"><span>SP</span><b>Sultan Pocket</b></Link>
       <nav>{NAV.map(([href,ic,label])=><Link className={p===href?'active':''} key={href} href={href}><i>{ic}</i>{label}</Link>)}</nav>
       <div className="wallet-side-foot">
         <Link href="/dashboard">← Main dashboard</Link>
@@ -55,6 +55,11 @@ export default function WalletShell({children,title='Expense Tracker'}){
         </div>
       </header>
       <main className="wallet-content">{children}</main>
+      <nav className="wallet-mobile-nav" aria-label="Wallet navigation">
+        {NAV.slice(0,5).map(([href,ic,label])=><Link className={p===href?'active':''} key={href} href={href}>
+          <i aria-hidden="true">{ic}</i><span>{label==='Debt & Borrowing'?'Debt':label}</span>
+        </Link>)}
+      </nav>
     </section>
 
     {gate&&<GateModal close={()=>setGate(false)} router={r}/>}
