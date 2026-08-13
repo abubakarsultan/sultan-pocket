@@ -14,7 +14,7 @@ export async function POST(request) {
       body: JSON.stringify({
         from: 'Sultan Pocket Contact <noreply@sultanpocket.online>',
         to: [process.env.CONTACT_RECEIVER_EMAIL],
-        reply_to: email,
+        reply_to: [email],
         subject: `[Contact] ${subject}`,
         text: `From: ${name} <${email}>\n\n${message}`,
       }),
