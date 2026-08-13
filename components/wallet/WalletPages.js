@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
 
 import {
-  balances,
   money,
   monthLabel,
   monthOf,
@@ -15,6 +14,10 @@ import {
   transactionLabel
 } from '@/lib/wallet/calc';
 
+
+/* =========================
+   QUICK ACTIONS
+========================= */
 
 function Actions({ items }) {
   const { user } = useWallet();
@@ -42,14 +45,10 @@ function Actions({ items }) {
           <span className="wallet-section-kicker">
             QUICK ACTIONS
           </span>
-
-          <h2>
-            Manage your money
-          </h2>
         </div>
 
         <span>
-          10 actions
+          {items.length} actions
         </span>
 
       </div>
@@ -118,6 +117,10 @@ function actionDescription(kind) {
 }
 
 
+/* =========================
+   CARD
+========================= */
+
 function Card({
   label,
   value,
@@ -152,6 +155,10 @@ function Card({
 }
 
 
+/* =========================
+   DEMO NOTICE
+========================= */
+
 function DemoNotice() {
   const router = useRouter();
 
@@ -184,6 +191,10 @@ function DemoNotice() {
 }
 
 
+/* =========================
+   DATA
+========================= */
+
 function useData() {
   const {
     state,
@@ -215,7 +226,7 @@ function useData() {
 
 export function Dashboard() {
   return (
-    <Page title="Expense Tracker">
+    <Page title="Manage your money">
       <DashboardInner />
     </Page>
   );
@@ -1135,8 +1146,6 @@ function TxTable({
 
       </div>
 
-
-      {/* Mobile transactions */}
 
       <div className="wallet-mobile-transactions">
 
@@ -2288,8 +2297,6 @@ function Page({
       <div className="wallet-page-title">
 
         <div>
-
-          {/* Removed the old WALLET label */}
 
           <h2>
             {title}
