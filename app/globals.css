@@ -203,3 +203,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .nav-links a:hover{color:var(--text)}
 @media(max-width:900px){.hero-grid,.split-section,.about-grid,.contact-grid{grid-template-columns:1fr;gap:40px}.hero-section{padding:58px 0}.hero-visual{order:2}.feature-grid{grid-template-columns:1fr 1fr}.service-grid{grid-template-columns:1fr 1fr}.steps-grid,.value-grid{grid-template-columns:1fr}.faq-grid{grid-template-columns:1fr}.about-grid{gap:28px}.contact-grid{gap:30px}}
 @media(max-width:650px){.nav-links{display:none!important}.hero-copy h1{font-size:43px}.hero-copy>p{font-size:15px}.feature-grid,.service-grid{grid-template-columns:1fr}.section-block{padding:60px 0}.page-hero{padding:55px 0 45px}.page-hero h1{font-size:38px}.form-row{grid-template-columns:1fr}.preview-window{transform:none}.hero-trust{gap:9px;font-size:10px}}
+
+
+/* Phase 2 — creator section */
+.creator-section h3 { margin: 0 0 4px; font-size: 22px; }
+.creator-section p { margin: 0 0 10px; }
