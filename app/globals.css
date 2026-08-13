@@ -175,3 +175,23 @@ input,select,textarea{font-family:inherit;}
 }
 .theme-picker{padding:10px 8px;border-top:1px solid var(--border);margin-top:4px}.theme-picker>span{display:block;font-size:10px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}.theme-options{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.theme-options button{border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);border-radius:8px;padding:7px 4px;font-size:10px}.theme-options button:hover,.theme-options button.active{border-color:var(--signal);color:var(--signal);background:var(--signal-tint)}.profile-delete-btn{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--border));}.profile-delete-btn:hover{border-color:var(--danger)}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+/* ---------- P2: launch + accessibility ---------- */
+.skip-link{position:fixed;left:12px;top:-60px;z-index:1000;padding:10px 14px;border-radius:8px;background:var(--signal);color:#fff;font-size:13px;font-weight:600;transition:top .15s}
+.skip-link:focus{top:12px}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--signal) 55%,transparent);outline-offset:2px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid color-mix(in srgb,var(--signal) 55%,transparent);outline-offset:2px}
+.legal-wrap{max-width:760px;margin:0 auto;line-height:1.7}
+.legal-wrap h1{font-size:34px;line-height:1.2;margin:4px 0 6px}
+.legal-wrap h2{font-size:19px;margin:30px 0 8px}
+.legal-wrap p{font-size:14px;color:var(--text-dim);margin-bottom:12px}
+.legal-eyebrow{font-size:11px!important;letter-spacing:.12em;font-weight:700;color:var(--signal)!important}
+.legal-updated{font-size:12px!important;color:var(--text-faint)!important;margin-bottom:28px!important}
+.legal-back{margin-top:36px!important}
+.legal-back a{color:var(--signal);font-weight:600}
+@media (max-width:700px){
+ .legal-page{padding-top:38px!important}
+ .legal-wrap h1{font-size:28px}
+ .legal-wrap h2{font-size:17px;margin-top:24px}
+ .legal-wrap p{font-size:13.5px}
+}

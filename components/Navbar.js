@@ -22,7 +22,7 @@ export default function Navbar() {
           />
           <span style={{ fontWeight: 600, fontSize: 15 }}>Sultan Pocket</span>
         </Link>
-        <nav style={{ display: 'flex', gap: 22, fontSize: 13.5, color: 'var(--text-dim)' }} className="nav-links">
+        <nav aria-label="Primary navigation" style={{ display: 'flex', gap: 22, fontSize: 13.5, color: 'var(--text-dim)' }} className="nav-links">
           <Link href="/">Home</Link>
           <Link href="/services">Services</Link>
           <Link href="/blog">Blog</Link>
