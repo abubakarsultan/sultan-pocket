@@ -16,7 +16,7 @@ const NAV=[
   ['/dashboard/wallet/charts','◒','Charts & Stats']
 ];
 
-export default function WalletShell({children,title='Wallet'}){
+export default function WalletShell({children,title='Expense Tracker'}){
   const p=usePathname(),r=useRouter();
   const {user,saving,month,setMonth}=useWallet();
   const [gate,setGate]=useState(false);
@@ -31,7 +31,7 @@ export default function WalletShell({children,title='Wallet'}){
 
   return <div className="wallet-shell">
     <aside className="wallet-sidebar">
-      <Link href="/dashboard/wallet" className="wallet-brand"><span>SP</span><b>Sultan Pocket</b></Link>
+      <Link href="/dashboard/wallet" className="wallet-brand"><span aria-hidden="true">💳</span><b>Expense Tracker</b></Link>
       <nav>{NAV.map(([href,ic,label])=><Link className={p===href?'active':''} key={href} href={href}><i>{ic}</i>{label}</Link>)}</nav>
       <div className="wallet-side-foot">
         <Link href="/dashboard">← Main dashboard</Link>
@@ -43,7 +43,7 @@ export default function WalletShell({children,title='Wallet'}){
 
     <section className="wallet-main">
       <header className="wallet-topbar">
-        <div><div className="wallet-kicker">PERSONAL FINANCE</div><h1>{title}</h1></div>
+        <div><h1>{title}</h1></div>
         <div className="wallet-actions">
           <button className="wallet-btn" aria-label="Previous month" onClick={()=>setMonth(shiftMonth(month,-1))}>‹</button>
           <div className="wallet-month">{monthLabel(month)}</div>
