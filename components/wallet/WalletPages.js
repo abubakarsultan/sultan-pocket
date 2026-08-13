@@ -226,7 +226,7 @@ function useData() {
 
 export function Dashboard() {
   return (
-    <Page title="Manage your money">
+    <Page>
       <DashboardInner />
     </Page>
   );
@@ -2294,17 +2294,19 @@ function Page({
   return (
     <div className="wallet-page">
 
-      <div className="wallet-page-title">
+      {title && (
+        <div className="wallet-page-title">
 
-        <div>
+          <div>
 
-          <h2>
-            {title}
-          </h2>
+            <h2>
+              {title}
+            </h2>
+
+          </div>
 
         </div>
-
-      </div>
+      )}
 
 
       {!user && (
