@@ -18,7 +18,7 @@ const NAV = [
 
 export default function WalletShell({
   children,
-  title = 'Expense Tracker'
+  title = 'Manage your money'
 }) {
   const p = usePathname();
   const r = useRouter();
@@ -55,7 +55,7 @@ export default function WalletShell({
           className="wallet-brand"
         >
           <span>💳</span>
-          <b>Expense Tracker</b>
+          <b>Manage your money</b>
         </Link>
 
         <nav>
