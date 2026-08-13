@@ -55,7 +55,7 @@ export default function WalletShell({
           className="wallet-brand"
         >
           <span>💳</span>
-          <b>Manage your money</b>
+          <b>Expense Tracker</b>
         </Link>
 
         <nav>
