@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
+import { supabase } from '@/lib/supabaseClient';
 
 import {
   money,
@@ -200,7 +201,8 @@ function useData() {
     state,
     user,
     month,
-    demoTransactions
+    demoTransactions,
+    currency
   } = useWallet();
 
   const tx = user
@@ -215,7 +217,8 @@ function useData() {
     month,
     s,
     b: s.balances,
-    state
+    state,
+    currency
   };
 }
 
@@ -240,7 +243,8 @@ function DashboardInner() {
     tx,
     month,
     s,
-    b
+    b,
+    currency
   } = useData();
 
   const recent = tx
@@ -320,52 +324,52 @@ function DashboardInner() {
 
         <Card
           label="Available spending"
-          value={money(b.available)}
+          value={money(b.available, currency)}
           sub="Cash + online"
         />
 
         <Card
           label="Cash balance"
-          value={money(b.cash)}
+          value={money(b.cash, currency)}
           sub="Physical cash"
         />
 
         <Card
           label="Online balance"
-          value={money(b.online)}
+          value={money(b.online, currency)}
           sub="Bank / digital"
         />
 
         <Card
           label="Savings"
-          value={money(b.savings)}
+          value={money(b.savings, currency)}
           sub="Money set aside"
           accent="var(--success)"
         />
 
         <Card
           label="E-Transit wallet"
-          value={money(b.etransit)}
+          value={money(b.etransit, currency)}
           sub="Transport balance"
           accent="#8656C4"
         />
 
         <Card
           label="Money owed"
-          value={money(b.owed)}
+          value={money(b.owed, currency)}
           sub="Outstanding borrowing"
           accent="var(--danger)"
         />
 
         <Card
           label="Total money"
-          value={money(b.total)}
+          value={money(b.total, currency)}
           sub="Cash + online + savings + E-Transit"
         />
 
         <Card
           label="Expenses this month"
-          value={money(s.expenses)}
+          value={money(s.expenses, currency)}
           sub={monthLabel(month)}
           accent="var(--danger)"
         />
@@ -404,21 +408,21 @@ function DashboardInner() {
               <b>
                 {money(
                   s.openingBalances.total
-                )}
+                , currency)}
               </b>
             </div>
 
             <div>
               <span>Income</span>
               <b className="positive">
-                {money(s.income)}
+                {money(s.income, currency)}
               </b>
             </div>
 
             <div>
               <span>Expenses</span>
               <b className="negative">
-                {money(s.expenses)}
+                {money(s.expenses, currency)}
               </b>
             </div>
 
@@ -431,36 +435,36 @@ function DashboardInner() {
                     : 'negative'
                 }
               >
-                {money(s.net)}
+                {money(s.net, currency)}
               </b>
             </div>
 
             <div>
               <span>Savings added</span>
               <b>
-                {money(s.savingsAdded)}
+                {money(s.savingsAdded, currency)}
               </b>
             </div>
 
             <div>
               <span>Savings used</span>
               <b>
-                {money(s.savingsUsed)}
+                {money(s.savingsUsed, currency)}
               </b>
             </div>
 
             <div>
               <span>Transport</span>
               <b>
-                {money(s.transport)}
+                {money(s.transport, currency)}
               </b>
             </div>
 
             <div>
               <span>Borrowed / repaid</span>
               <b>
-                {money(s.borrowed)} /{' '}
-                {money(s.repaid)}
+                {money(s.borrowed, currency)} /{' '}
+                {money(s.repaid, currency)}
               </b>
             </div>
 
@@ -469,7 +473,7 @@ function DashboardInner() {
               <b>
                 {money(
                   s.closingBalances.total
-                )}
+                , currency)}
               </b>
             </div>
 
@@ -517,11 +521,13 @@ function DashboardInner() {
           title="Income breakdown"
           data={incomeCats}
           positive
+          currency={currency}
         />
 
         <CategorySummary
           title="Expense breakdown"
           data={expenseCats}
+          currency={currency}
         />
 
       </div>
@@ -555,7 +561,7 @@ function DashboardInner() {
             <b>
               {money(
                 s.openingBalances.cash
-              )}
+              , currency)}
             </b>
           </span>
 
@@ -564,14 +570,14 @@ function DashboardInner() {
             <b>
               {money(
                 s.openingBalances.online
-              )}
+              , currency)}
             </b>
           </span>
 
           <strong>
             {money(
               s.openingBalances.total
-            )}
+            , currency)}
           </strong>
 
         </div>
@@ -590,7 +596,8 @@ function DashboardInner() {
 function CategorySummary({
   title,
   data,
-  positive
+  positive,
+  currency
 }) {
 
   const max = Math.max(
@@ -633,7 +640,7 @@ function CategorySummary({
                     : ''
                 }
               >
-                {money(v)}
+                {money(v, currency)}
               </b>
             </div>
 
@@ -991,11 +998,36 @@ function TxTable({
 
   const {
     remove,
-    user
+    user,
+    currency
   } = useWallet();
 
   const [confirmId, setConfirmId] =
     useState(null);
+
+  const [attachment, setAttachment] =
+    useState(null);
+
+  const [attachmentBusy, setAttachmentBusy] =
+    useState(false);
+
+  const [attachmentError, setAttachmentError] =
+    useState('');
+
+  async function viewAttachment(transaction){
+    if(!transaction?.attachment_path)return;
+    setAttachmentError('');
+    setAttachmentBusy(true);
+    const {data,error}=await supabase.storage
+      .from('wallet-attachments')
+      .createSignedUrl(transaction.attachment_path,60);
+    setAttachmentBusy(false);
+    if(error||!data?.signedUrl){
+      setAttachmentError(error?.message||'Could not open this attachment.');
+      return;
+    }
+    setAttachment({transaction,url:data.signedUrl});
+  }
 
   if (!tx.length) {
     return (
@@ -1066,6 +1098,19 @@ function TxTable({
                     </small>
                   )}
 
+                  {t.attachment_path && (
+                    <button
+                      type="button"
+                      className="attachment-button"
+                      onClick={() => viewAttachment(t)}
+                      title="View receipt"
+                      aria-label="View receipt"
+                      disabled={attachmentBusy}
+                    >
+                      📎
+                    </button>
+                  )}
+
                 </td>
 
 
@@ -1089,7 +1134,7 @@ function TxTable({
                       : 'negative'
                   }
                 >
-                  {money(t.amount)}
+                  {money(t.amount, currency)}
                 </td>
 
 
@@ -1181,6 +1226,19 @@ function TxTable({
                     t.person ||
                     t.notes ||
                     'Transaction'}
+
+                  {t.attachment_path && (
+                    <button
+                      type="button"
+                      className="attachment-button mobile-attachment-button"
+                      onClick={() => viewAttachment(t)}
+                      title="View receipt"
+                      aria-label="View receipt"
+                      disabled={attachmentBusy}
+                    >
+                      📎
+                    </button>
+                  )}
                 </strong>
 
                 {t.person && (
@@ -1211,7 +1269,7 @@ function TxTable({
                     : 'negative'
                 }
               >
-                {money(t.amount)}
+                {money(t.amount, currency)}
               </b>
 
             </div>
@@ -1263,9 +1321,51 @@ function TxTable({
       </div>
 
 
+      {attachmentBusy && (
+        <div className="wallet-attachment-loading" role="status">
+          Opening attachment…
+        </div>
+      )}
+
+      {attachmentError && (
+        <div className="wallet-attachment-toast" role="alert">
+          {attachmentError}
+          <button type="button" onClick={() => setAttachmentError('')}>×</button>
+        </div>
+      )}
+
+      {attachment && (
+        <div
+          className="wallet-attachment-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Transaction attachment"
+          onClick={() => setAttachment(null)}
+        >
+          <div
+            className="wallet-attachment-lightbox-inner"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="wallet-attachment-close"
+              aria-label="Close attachment"
+              onClick={() => setAttachment(null)}
+            >
+              ×
+            </button>
+            <img
+              src={attachment.url}
+              alt={`Receipt for ${attachment.transaction?.date || 'transaction'}`}
+            />
+          </div>
+        </div>
+      )}
+
       {confirmId !== null && (
         <ConfirmDelete
           transaction={confirmTx}
+          currency={currency}
           close={() =>
             setConfirmId(null)
           }
@@ -1288,7 +1388,8 @@ function TxTable({
 function ConfirmDelete({
   transaction,
   close,
-  confirm
+  confirm,
+  currency
 }) {
 
   const [busy, setBusy] =
@@ -1331,7 +1432,7 @@ function ConfirmDelete({
           ·{' '}
           {money(
             transaction?.amount
-          )}
+          , currency)}
         </p>
 
 
@@ -1475,7 +1576,7 @@ export function Transport() {
 
 function TransportInner() {
 
-  const { user, s } =
+  const { user, s, currency } =
     useData();
 
 
@@ -1559,14 +1660,14 @@ function TransportInner() {
           label="Transport this month"
           value={money(
             s.transport
-          )}
+          , currency)}
         />
 
         <Card
           label="E-Transit used"
           value={money(
             transitUsed
-          )}
+          , currency)}
           accent="#8656C4"
         />
 
@@ -1574,12 +1675,12 @@ function TransportInner() {
           label="Other transport"
           value={money(
             otherTransport
-          )}
+          , currency)}
         />
 
         <Card
           label="Top-ups"
-          value={money(topups)}
+          value={money(topups, currency)}
           accent="var(--success)"
         />
 
@@ -1644,7 +1745,7 @@ export function Savings() {
 
 function SavingsInner() {
 
-  const { s, b } =
+  const { s, b, currency } =
     useData();
 
 
@@ -1671,7 +1772,7 @@ function SavingsInner() {
 
         <Card
           label="Savings balance"
-          value={money(b.savings)}
+          value={money(b.savings, currency)}
           accent="var(--success)"
         />
 
@@ -1679,14 +1780,14 @@ function SavingsInner() {
           label="Added this month"
           value={money(
             s.savingsAdded
-          )}
+          , currency)}
         />
 
         <Card
           label="Used this month"
           value={money(
             s.savingsUsed
-          )}
+          , currency)}
           accent="var(--danger)"
         />
 
@@ -1694,7 +1795,7 @@ function SavingsInner() {
           label="Available to spend"
           value={money(
             b.available
-          )}
+          , currency)}
         />
 
       </div>
@@ -1747,7 +1848,7 @@ export function Debt() {
 
 function DebtInner() {
 
-  const { s, b } =
+  const { s, b, currency } =
     useData();
 
 
@@ -1780,7 +1881,7 @@ function DebtInner() {
 
         <Card
           label="Still owed"
-          value={money(b.owed)}
+          value={money(b.owed, currency)}
           accent="var(--danger)"
         />
 
@@ -1788,14 +1889,14 @@ function DebtInner() {
           label="Borrowed total"
           value={money(
             s.borrowed
-          )}
+          , currency)}
         />
 
         <Card
           label="Repaid total"
           value={money(
             s.repaid
-          )}
+          , currency)}
           accent="var(--success)"
         />
 
@@ -1839,11 +1940,11 @@ function DebtInner() {
                       Borrowed{' '}
                       {money(
                         v.borrowed
-                      )}{' '}
+                      , currency)}{' '}
                       · Repaid{' '}
                       {money(
                         v.repaid
-                      )}
+                      , currency)}
                     </span>
 
                   </div>
@@ -1859,7 +1960,7 @@ function DebtInner() {
                     {v.remaining
                       ? `${money(
                           v.remaining
-                        )} remaining`
+                        , currency)} remaining`
                       : 'Paid'}
                   </b>
 
@@ -1930,7 +2031,8 @@ function ChartsInner() {
   const {
     tx,
     month,
-    s
+    s,
+    currency
   } = useData();
 
 
@@ -1997,6 +2099,7 @@ function ChartsInner() {
           )}
           aLabel="Income"
           bLabel="Expenses"
+          currency={currency}
         />
 
 
@@ -2015,12 +2118,14 @@ function ChartsInner() {
           )}
           aLabel="Savings"
           bLabel=""
+          currency={currency}
         />
 
 
         <CategorySummary
           title="Expenses by category"
           data={expenseCats}
+          currency={currency}
         />
 
 
@@ -2028,6 +2133,7 @@ function ChartsInner() {
           title="Income by category"
           data={incomeCats}
           positive
+          currency={currency}
         />
 
       </div>
@@ -2056,6 +2162,7 @@ function ChartsInner() {
             value={
               s.balances.cash
             }
+            currency={currency}
           />
 
           <BalanceStat
@@ -2063,6 +2170,7 @@ function ChartsInner() {
             value={
               s.balances.online
             }
+            currency={currency}
           />
 
           <BalanceStat
@@ -2070,6 +2178,7 @@ function ChartsInner() {
             value={
               s.balances.savings
             }
+            currency={currency}
           />
 
           <BalanceStat
@@ -2077,6 +2186,7 @@ function ChartsInner() {
             value={
               s.balances.etransit
             }
+            currency={currency}
           />
 
         </div>
@@ -2100,6 +2210,7 @@ function ChartsInner() {
           )}
           aLabel="Transport"
           bLabel=""
+          currency={currency}
         />
 
 
@@ -2118,6 +2229,7 @@ function ChartsInner() {
           )}
           aLabel="Savings balance"
           bLabel=""
+          currency={currency}
         />
 
       </div>
@@ -2131,9 +2243,9 @@ function ChartsInner() {
 
         <p className="chart-note">
           Highest monthly expense:{' '}
-          {money(maxSpend)}
+          {money(maxSpend, currency)}
           {' '}· Highest monthly savings added:{' '}
-          {money(maxSave)}.
+          {money(maxSave, currency)}.
           Charts use the selected month
           and the five preceding months.
         </p>
@@ -2163,7 +2275,8 @@ function ChartBars({
   title,
   items,
   aLabel,
-  bLabel
+  bLabel,
+  currency
 }) {
 
   const max =
@@ -2221,7 +2334,7 @@ function ChartBars({
                 }}
                 title={`${aLabel}: ${money(
                   x.a
-                )}`}
+                , currency)}`}
               />
 
               {bLabel && (
@@ -2237,7 +2350,7 @@ function ChartBars({
                   }}
                   title={`${bLabel}: ${money(
                     x.b
-                  )}`}
+                  , currency)}`}
                 />
               )}
 
@@ -2260,7 +2373,8 @@ function ChartBars({
 
 function BalanceStat({
   label,
-  value
+  value,
+  currency
 }) {
 
   return (
@@ -2271,7 +2385,7 @@ function BalanceStat({
       </span>
 
       <strong>
-        {money(value)}
+        {money(value, currency)}
       </strong>
 
     </div>

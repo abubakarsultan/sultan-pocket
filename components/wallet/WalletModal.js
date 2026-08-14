@@ -1,12 +1,13 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {useWallet} from './WalletProvider';
+import {supabase} from '@/lib/supabaseClient';
 import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,firstDayOfMonth,debtSnapshot,money} from '@/lib/wallet/calc';
 
 const BASE={
   type:'expense',amount:'',date:todayISO(),category:'Food',method:'cash',
-  source:'',person:'',notes:'',repayRequired:true,from:'cash',destination:'cash'
+  source:'',person:'',notes:'',repayRequired:true,from:'cash',destination:'cash',attachment_path:''
 };
 const TITLES={
   income:'Income',expense:'Expense',transfer:'Cash ↔ Online Transfer',
@@ -16,13 +17,28 @@ const TITLES={
 function normalizeType(t){return t==='income_other'||t==='salary'?'income':t;}
 
 export default function WalletModal(){
-  const {user,add,update,addCategory,state,notify,month}=useWallet();
+  const {user,add,update,addCategory,state,notify,month,currency}=useWallet();
   const [open,setOpen]=useState(false);
   const [kind,setKind]=useState('expense');
   const [editingId,setEditingId]=useState(null);
   const [form,setForm]=useState({...BASE});
   const [busy,setBusy]=useState(false);
   const [newCategory,setNewCategory]=useState('');
+  const [attachmentFile,setAttachmentFile]=useState(null);
+  const [attachmentPreview,setAttachmentPreview]=useState('');
+  const [attachmentRemove,setAttachmentRemove]=useState(false);
+  const [attachmentError,setAttachmentError]=useState('');
+  const attachmentInputRef=useRef(null);
+
+  useEffect(()=>{
+    if(!attachmentFile){
+      setAttachmentPreview('');
+      return;
+    }
+    const url=URL.createObjectURL(attachmentFile);
+    setAttachmentPreview(url);
+    return()=>URL.revokeObjectURL(url);
+  },[attachmentFile]);
 
   useEffect(()=>{
     function handleAdd(e){
@@ -33,6 +49,10 @@ export default function WalletModal(){
       setEditingId(null);
       setKind(nextKind);
       setNewCategory('');
+      setAttachmentFile(null);
+      setAttachmentRemove(false);
+      setAttachmentError('');
+      if(attachmentInputRef.current) attachmentInputRef.current.value='';
       setForm({
         ...BASE,
         ...preset,
@@ -51,6 +71,10 @@ export default function WalletModal(){
       setEditingId(t.id);
       setKind(k);
       setNewCategory('');
+      setAttachmentFile(null);
+      setAttachmentRemove(false);
+      setAttachmentError('');
+      if(attachmentInputRef.current) attachmentInputRef.current.value='';
       setForm({
         ...BASE,...t,type:k,
         amount:String(t.amount??''),
@@ -60,6 +84,7 @@ export default function WalletModal(){
         from:t.from||'cash',
         destination:t.destination||'cash',
         repayRequired:t.repayRequired!==false,
+        attachment_path:t.attachment_path||'',
       });
       setOpen(true);
     }
@@ -88,6 +113,51 @@ export default function WalletModal(){
   const setField=(f,v)=>setForm(c=>({...c,[f]:v}));
   const close=()=>{if(!busy){setOpen(false);setEditingId(null);}};
 
+  function handleAttachmentChange(e){
+    const file=e.target.files?.[0];
+    setAttachmentError('');
+    if(!file)return;
+    if(!file.type?.startsWith('image/')){
+      setAttachmentError('Please select an image file.');
+      e.target.value='';
+      return;
+    }
+    if(file.size>5*1024*1024){
+      setAttachmentError('Attachment must be 5MB or smaller.');
+      e.target.value='';
+      return;
+    }
+    setAttachmentFile(file);
+    setAttachmentRemove(false);
+  }
+
+  function removeAttachment(){
+    setAttachmentFile(null);
+    setAttachmentRemove(Boolean(form.attachment_path));
+    setAttachmentError('');
+    if(attachmentInputRef.current) attachmentInputRef.current.value='';
+  }
+
+  async function uploadAttachment(transactionId,file){
+    const originalExt=String(file.name||'').split('.').pop()?.toLowerCase();
+    const ext=originalExt&&/^[a-z0-9]{1,8}$/.test(originalExt)
+      ? originalExt
+      : (file.type.split('/')[1]||'jpg').replace(/[^a-z0-9]/gi,'').slice(0,8)||'jpg';
+    const path=`${user.id}/${transactionId}-${Date.now()}.${ext}`;
+    const {error}=await supabase.storage.from('wallet-attachments').upload(path,file,{contentType:file.type,upsert:false});
+    if(error){
+      notify(error.message||'Could not upload the attachment.');
+      return null;
+    }
+    return path;
+  }
+
+  async function deleteAttachment(path){
+    if(!path)return null;
+    const {error}=await supabase.storage.from('wallet-attachments').remove([path]);
+    return error||null;
+  }
+
   async function saveCategory(){
     const name=newCategory.trim();
     if(!name){notify('Enter a category name first.');return;}
@@ -97,6 +167,7 @@ export default function WalletModal(){
 
   async function submit(e){
     e.preventDefault();
+    setAttachmentError('');
     if(!form.amount||Number(form.amount)<=0){notify('Enter a valid amount.');return;}
     if((kind==='borrow'||kind==='repay')&&!String(form.person||'').trim()){
       notify('Enter the person name.');return;
@@ -105,8 +176,9 @@ export default function WalletModal(){
       const person=String(form.person||'').trim();
       const remaining=outstandingPeople[person]?.remaining||0;
       if(!remaining){notify(`No outstanding debt found for ${person}.`);return;}
-      if(Number(form.amount)>remaining){notify(`Maximum repayment for ${person} is ${money(remaining)}.`);return;}
+      if(Number(form.amount)>remaining){notify(`Maximum repayment for ${person} is ${money(remaining,currency)}.`);return;}
     }
+
     setBusy(true);
     let tx={...form,amount:Number(form.amount),type:kind};
     if(kind==='income'){
@@ -118,9 +190,43 @@ export default function WalletModal(){
     if(kind==='transfer'){
       tx={...tx,destination:form.from==='cash'?'online':'cash'};
     }
+
+    const oldPath=editingId?String(form.attachment_path||''):'';
+    const transactionId=editingId||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    let newPath=null;
+
+    if(attachmentFile){
+      newPath=await uploadAttachment(transactionId,attachmentFile);
+      if(!newPath){setBusy(false);return;}
+      tx.attachment_path=newPath;
+    }else if(attachmentRemove){
+      tx.attachment_path=null;
+    }else{
+      tx.attachment_path=oldPath||null;
+    }
+
+    if(!editingId&&newPath)tx.id=transactionId;
+
     const ok=editingId?await update(editingId,tx):await add(tx);
+    if(!ok){
+      if(newPath)await deleteAttachment(newPath);
+      setBusy(false);
+      return;
+    }
+
+    if(editingId&&oldPath&&(newPath||attachmentRemove)){
+      const oldError=await deleteAttachment(oldPath);
+      if(oldError)notify('Transaction updated, but the old attachment could not be removed.');
+    }
+
     setBusy(false);
-    if(ok){setOpen(false);setEditingId(null);}
+    if(ok){
+      setOpen(false);
+      setEditingId(null);
+      setAttachmentFile(null);
+      setAttachmentRemove(false);
+      setAttachmentError('');
+    }
   }
 
   const isExpense=kind==='expense';
@@ -213,6 +319,38 @@ export default function WalletModal(){
             <input value={form.from==='cash'?'Online':'Cash'} readOnly/>
           </label>}
         </>}
+
+        <label className="full wallet-attachment-field">Attach receipt (optional)
+          <input
+            ref={attachmentInputRef}
+            id="wallet-attachment"
+            type="file"
+            accept="image/*"
+            onChange={handleAttachmentChange}
+          />
+
+          {attachmentPreview && (
+            <div className="wallet-attachment-preview">
+              <img src={attachmentPreview} alt="Receipt preview" />
+              <button type="button" className="table-action delete" onClick={removeAttachment}>Remove</button>
+            </div>
+          )}
+
+          {!attachmentPreview && form.attachment_path && !attachmentRemove && (
+            <div className="wallet-current-attachment">
+              <span>📎 Receipt attached</span>
+              <button type="button" className="table-action delete" onClick={removeAttachment}>Remove</button>
+            </div>
+          )}
+
+          {!attachmentPreview && attachmentRemove && (
+            <small className="wallet-attachment-removed">The current attachment will be removed when you save.</small>
+          )}
+
+          {attachmentError && (
+            <small className="wallet-attachment-error">{attachmentError}</small>
+          )}
+        </label>
 
         <label className="full">Notes
           <textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="Add a note if needed"/>

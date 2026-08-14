@@ -50,6 +50,7 @@ function rowToTransaction(row){
     repayRequired:row.repay_required,
     from:row.from_account||details.from||'',
     destination:row.destination||details.destination||'',
+    attachment_path:row.attachment_path||details.attachment_path||'',
     created_at:row.created_at,
     updated_at:row.updated_at,
   }])[0];
@@ -70,6 +71,7 @@ function transactionRow(tx,userId){
     repay_required:tx.repayRequired!==false,
     from_account:tx.from||null,
     destination:tx.destination||null,
+    attachment_path:tx.attachment_path||null,
     details:tx,
   };
 }
@@ -150,7 +152,7 @@ export function WalletProvider({children}){
 
   async function add(tx){
     if(!user){notify('Please sign in to save changes.');return false;}
-    const id=globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const id=tx.id||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const nextTx={...tx,id,date:tx.date||todayISO()};
     const validation=getValidationMessage(nextTx,[...state.transactions,nextTx]);
     if(validation){notify(validation);return false;}
@@ -195,11 +197,18 @@ export function WalletProvider({children}){
     let query=supabase.from('wallet_transactions').delete().eq('id',id).eq('user_id',user.id);
     if(current.updated_at) query=query.eq('updated_at',current.updated_at);
     const {data,error}=await query.select('id').maybeSingle();
+    if(error){setSaving(false);notify(error.message||'Could not delete this transaction.');return false;}
+    if(!data){setSaving(false);notify('This transaction changed elsewhere. Reload the Wallet and try again.');return false;}
+
+    let attachmentError='';
+    if(current.attachment_path){
+      const {error:e}=await supabase.storage.from('wallet-attachments').remove([current.attachment_path]);
+      if(e) attachmentError=e.message||'The transaction was deleted, but its attachment could not be removed.';
+    }
+
     setSaving(false);
-    if(error){notify(error.message||'Could not delete this transaction.');return false;}
-    if(!data){notify('This transaction changed elsewhere. Reload the Wallet and try again.');return false;}
     setState(prev=>({...prev,transactions:prev.transactions.filter(t=>t.id!==id)}));
-    notify('Transaction deleted');
+    notify(attachmentError||'Transaction deleted');
     return true;
   }
 
@@ -219,10 +228,12 @@ export function WalletProvider({children}){
     return true;
   }
 
+  const currency=user?.user_metadata?.currency||'PKR';
+
   const value=useMemo(()=>({
     state,user,loading,saving,toast,notify,add,update,remove,addCategory,
-    month,setMonth,demoTransactions:DEMO_TRANSACTIONS
-  }),[state,user,loading,saving,toast,month]);
+    month,setMonth,currency,demoTransactions:DEMO_TRANSACTIONS
+  }),[state,user,loading,saving,toast,month,currency]);
 
   return <C.Provider value={value}>
     {children}

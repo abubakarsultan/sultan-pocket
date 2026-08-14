@@ -341,3 +341,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media (min-width:761px){
   .wallet-mobile-transactions{display:none}
 }
+
+/* Wallet transaction attachments */
+.wallet-attachment-field input[type="file"]{padding:8px;cursor:pointer}
+.wallet-attachment-preview{display:flex;align-items:center;gap:10px;margin-top:9px;padding:8px;border:1px solid var(--border);background:var(--surface-2);border-radius:10px}
+.wallet-attachment-preview img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border)}
+.wallet-current-attachment{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding:8px 10px;border:1px solid var(--border);background:var(--surface-2);border-radius:9px;font-size:11px;color:var(--text-dim)}
+.wallet-attachment-error,.wallet-attachment-removed{display:block;margin-top:7px;font-size:10px;color:var(--danger)}
+.wallet-attachment-removed{color:var(--text-faint)}
+.attachment-button{border:0;background:var(--signal-tint);color:var(--signal);border-radius:6px;padding:3px 5px;margin-left:7px;cursor:pointer;font-size:12px;line-height:1}
+.attachment-button:disabled{opacity:.5;cursor:wait}
+.mobile-attachment-button{display:inline-block;margin-left:6px;vertical-align:middle}
+.wallet-attachment-loading{position:fixed;right:20px;bottom:20px;z-index:305;background:var(--text);color:var(--bg);padding:10px 14px;border-radius:9px;font-size:12px;box-shadow:0 8px 30px #0002}
+.wallet-attachment-toast{position:fixed;right:20px;bottom:20px;z-index:305;display:flex;align-items:center;gap:10px;background:var(--danger);color:#fff;padding:10px 12px;border-radius:9px;font-size:12px;box-shadow:0 8px 30px #0004}
+.wallet-attachment-toast button{border:0;background:none;color:inherit;font-size:18px;line-height:1;cursor:pointer}
+.wallet-attachment-lightbox{position:fixed;inset:0;z-index:310;background:#000b;display:grid;place-items:center;padding:24px}
+.wallet-attachment-lightbox-inner{position:relative;max-width:min(1100px,96vw);max-height:92vh;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 20px 80px #0008}
+.wallet-attachment-lightbox-inner img{display:block;max-width:92vw;max-height:88vh;width:auto;height:auto;border-radius:8px;object-fit:contain}
+.wallet-attachment-close{position:absolute;right:7px;top:7px;z-index:1;width:32px;height:32px;border:1px solid var(--border);border-radius:50%;background:var(--surface);color:var(--text);font-size:22px;line-height:1;cursor:pointer}
