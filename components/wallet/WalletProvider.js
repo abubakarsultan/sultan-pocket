@@ -263,14 +263,17 @@ export function WalletProvider({children}){
       date:tx.date||todayISO(),
     })):[];
     if(!clean.length)return {imported:0,errors:[]};
-    let working=[...state.transactions];
     const valid=[],errors=[];
+    const validTypes=new Set(['salary','income_other','expense','transfer','withdraw','savings_add','savings_use','etransit_add','transport','borrow','repay']);
     for(let i=0;i<clean.length;i++){
       const tx=clean[i];
-      const message=getValidationMessage(tx,[...working,tx]);
-      if(message){errors.push({row:i+1,error:message,data:tx});continue;}
+      const row=i+1;
+      if(!validTypes.has(tx.type)){errors.push({row,error:`Unknown transaction type \"${tx.type}\".`,data:tx});continue;}
+      if(!Number.isFinite(Number(tx.amount))||Number(tx.amount)<=0){errors.push({row,error:'Amount must be a positive number.',data:tx});continue;}
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(String(tx.date))){errors.push({row,error:'Date must use YYYY-MM-DD.',data:tx});continue;}
+      const d=new Date(`${tx.date}T00:00:00Z`);
+      if(Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==tx.date){errors.push({row,error:'Date is invalid.',data:tx});continue;}
       valid.push(tx);
-      working.push(tx);
     }
     if(!valid.length){notify('No valid transactions to import.');return {imported:0,errors};}
     setSaving(true);
@@ -345,6 +348,7 @@ export function WalletProvider({children}){
 
   const value=useMemo(()=>({
     state,user,loading,saving,toast,notify,add,update,remove,addCategory,
+    addRecurring,updateRecurring,removeRecurring,
     month,setMonth,currency,demoTransactions:DEMO_TRANSACTIONS
   }),[state,user,loading,saving,toast,month,currency]);
 

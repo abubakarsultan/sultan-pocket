@@ -82,6 +82,10 @@ export default function ProfilePage(){
   }
 
   async function changePassword(){if(newPassword.length<6){setError('Password must be at least 6 characters.');return;}setBusy(true);setError('');const {error:e}=await supabase.auth.updateUser({password:newPassword});setBusy(false);if(e)setError(e.message);else{setNewPassword('');setNotice('Password updated successfully.');}}
+  function csvCell(value){
+    return `"${String(value ?? '').replaceAll('"','""')}"`;
+  }
+
   async function exportMyData(){
     setBusy(true);setError('');setNotice('');
     try{
@@ -92,35 +96,36 @@ export default function ProfilePage(){
       ]);
       const firstError=txError||catError||recError;
       if(firstError)throw firstError;
-      const payload={
-        exported_at:new Date().toISOString(),
-        app:'Sultan Pocket',
-        profile:{
-          id:user.id,
-          email:user.email||'',
-          created_at:user.created_at||null,
-          ...user.user_metadata
-        },
-        wallet:{
-          transactions:transactions||[],
-          categories:categories||[],
-          recurring:recurring||[],
-          attachment_paths:(transactions||[]).map(t=>t.attachment_path).filter(Boolean)
+
+      const rows=[];
+      const push=(section,values)=>rows.push(values.map(csvCell).join(','));
+      push('Section,ID,Date,Type,Amount,Category,Merchant,Method,Source,Person,Notes,Day of Month,Active,Field,Value'.split(','),['Profile','','','','','','','','','','','','','Email',user.email||'']);
+      const metadata=user.user_metadata||{};
+      Object.entries(metadata).forEach(([field,value])=>{
+        if(field==='avatar_path'){
+          push('',Array(13).fill('').concat([field,value]));
+        }else{
+          push('',Array(13).fill('').concat([field,typeof value==='object'?JSON.stringify(value):value]));
         }
-      };
-      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+      });
+      (transactions||[]).forEach(t=>push('Transactions',[ 'Transactions',t.id,t.date,t.type,t.amount,t.category||'',t.merchant||'',t.method||t.from_account||'',t.source||'',t.person||'',t.notes||'','','','','']));
+      (categories||[]).forEach(c=>push('Categories',[ 'Categories',c.id,'',c.type,'',c.name||'','','','','','','','','','']));
+      (recurring||[]).forEach(r=>push('Recurring',[ 'Recurring',r.id,'',r.type,r.amount,r.category||'','',r.method||'',r.source||'',r.person||'',r.notes||'',r.day_of_month,r.active?'Yes':'No','','']));
+      (transactions||[]).filter(t=>t.attachment_path).forEach(t=>push('Attachments',['Attachments',t.id,t.date,t.type,'','','','','','','', '', '', 'attachment_path',t.attachment_path]));
+
+      const csv='\ufeff'+rows.join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');
       a.href=url;
-      a.download=`sultan-pocket-export-${form.username||username}-${new Date().toISOString().slice(0,10)}.json`;
+      a.download=`sultan-pocket-my-data-${form.username||username}-${new Date().toISOString().slice(0,10)}.csv`;
       document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
-      setNotice('Your account data was exported successfully.');
+      setNotice('Your account data was exported as CSV successfully.');
     }catch(e){
       setError(e.message||'Could not export your data.');
     }finally{setBusy(false);}
   }
 
-  async function signOut(){await supabase.auth.signOut();router.push('/signin');}
   async function deleteAccount(){const confirmed=window.confirm('Delete your account permanently? This removes your account and Wallet data and cannot be undone.');if(!confirmed)return;setBusy(true);setError('');const {error:e}=await supabase.rpc('delete_my_account');setBusy(false);if(e){setError(e.message||'Could not delete your account.');return;}await supabase.auth.signOut();router.replace('/');}
 
   return <main className="profile-page"><section className="profile-card">
@@ -152,7 +157,7 @@ export default function ProfilePage(){
       <section><h2>Wallet preferences</h2><div className="profile-detail-grid"><Detail label="Currency" value={form.currency}/><Detail label="Date format" value={form.date_format}/><Detail label="Default payment" value={form.default_payment_method==='cash'?'Cash':'Online'}/><Detail label="Default expense" value={form.default_expense_category}/><Detail label="Default income" value={form.default_income_category}/><Detail label="Profile visibility" value="Private"/></div></section>
       <section><h2>Account information</h2><div className="profile-detail-grid"><Detail label="Account created" value={user.created_at?new Date(user.created_at).toLocaleDateString('en-GB'):'—'}/><Detail label="Authentication" value="Email account"/><Detail label="Wallet data" value="Private to your account"/><Detail label="Profile URL" value={`/u/${form.username}`}/></div></section>
       <section><h2>Security</h2><div className="password-row"><input type="password" placeholder="New password" value={newPassword} onChange={e=>setNewPassword(e.target.value)}/><button className="btn" onClick={changePassword} disabled={busy}>Change password</button></div><p className="profile-help">Your profile and Wallet data are private. Sign out when using a shared device.</p></section>
-      <section className="profile-danger"><h2>Account actions</h2><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="btn profile-signout-btn" onClick={signOut} disabled={busy}>Sign out</button><button className="btn" onClick={exportMyData} disabled={busy}>Export My Data</button><button className="btn profile-delete-btn" onClick={deleteAccount} disabled={busy}>Delete account</button></div><p className="profile-help">Deleting your account permanently removes your account and Wallet data.</p></section>
+      <section className="profile-danger"><h2>Account actions</h2><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="btn profile-signout-btn" onClick={signOut} disabled={busy}>Sign out</button><button className="btn" onClick={exportMyData} disabled={busy}>Export My Data (CSV)</button><button className="btn profile-delete-btn" onClick={deleteAccount} disabled={busy}>Delete account</button></div><p className="profile-help">Deleting your account permanently removes your account and Wallet data.</p></section>
     </div>}
   </section></main>;
 }
