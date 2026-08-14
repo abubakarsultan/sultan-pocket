@@ -3,6 +3,7 @@ import { AuthProvider } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ThemeManager from '@/components/ThemeManager';
+import Assistant from '@/components/assistant/Assistant';
 
 export const metadata = {
   title: 'Sultan Pocket — Manage your money, your way',
@@ -10,13 +11,7 @@ export const metadata = {
   metadataBase: new URL('https://sultanpocket.online'),
   icons: { icon: '/favicon.ico', shortcut: '/favicon.ico', apple: '/favicon.ico' },
   robots: { index: true, follow: true },
-  openGraph: {
-    title: 'Sultan Pocket',
-    description: 'Track expenses, plan budgets, and grow savings — all in one place.',
-    url: 'https://sultanpocket.online',
-    siteName: 'Sultan Pocket',
-    type: 'website',
-  },
+  openGraph: { title: 'Sultan Pocket', description: 'Track expenses, plan budgets, and grow savings — all in one place.', url: 'https://sultanpocket.online', siteName: 'Sultan Pocket', type: 'website' },
 };
 
 export default function RootLayout({ children }) {
@@ -29,6 +24,7 @@ export default function RootLayout({ children }) {
           <Navbar />
           <div id="main-content">{children}</div>
           <Footer />
+          <Assistant />
         </AuthProvider>
       </body>
     </html>
