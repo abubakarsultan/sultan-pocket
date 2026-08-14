@@ -5,12 +5,16 @@ create table if not exists public.wallet_budgets (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   category text not null,
-  month text not null check (month ~ '^\\d{4}-(0[1-9]|1[0-2])$'),
+  month text not null check (month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
   limit_amount numeric not null check (limit_amount > 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, category, month)
 );
+
+-- If the table was created with the previous month constraint, replace it.
+alter table public.wallet_budgets drop constraint if exists wallet_budgets_month_check;
+alter table public.wallet_budgets add constraint wallet_budgets_month_check check (month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$');
 
 alter table public.wallet_budgets enable row level security;
 
