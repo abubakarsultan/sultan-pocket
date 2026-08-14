@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
 import { monthLabel, shiftMonth } from '@/lib/wallet/calc';
 import { useEffect, useState } from 'react';
-import ProfileMenu from '@/components/ProfileMenu';
 
 const NAV = [
   ['/dashboard/wallet', '▦', 'Dashboard'],
@@ -19,7 +18,7 @@ const NAV = [
 
 export default function WalletShell({
   children,
-  title = 'Expense Tracker'
+  title = 'Manage Your Money'
 }) {
   const p = usePathname();
   const r = useRouter();
@@ -56,7 +55,7 @@ export default function WalletShell({
           className="wallet-brand"
         >
           <span>💳</span>
-          <b>Expense Tracker</b>
+          <b>Manage Your Money</b>
         </Link>
 
         <nav>
@@ -163,7 +162,6 @@ export default function WalletShell({
               + Expense
             </button>
 
-            {user && <ProfileMenu compact />}
 
             {saving && (
               <span className="wallet-saving">

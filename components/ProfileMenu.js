@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {useAuth} from './AuthProvider';
 import {supabase} from '@/lib/supabaseClient';
 
@@ -10,10 +10,34 @@ export default function ProfileMenu({compact=false}){
   const {user}=useAuth();
   const router=useRouter();
   const [open,setOpen]=useState(false);
+  const menuRef=useRef(null);
   const [theme,setTheme]=useState('system');
   useEffect(()=>{
     if(typeof window!=='undefined')setTheme(localStorage.getItem('sultan-pocket-theme')||'system');
   },[]);
+  useEffect(()=>{
+    if(!open)return;
+
+    const handleOutsideClick=(event)=>{
+      if(menuRef.current&&!menuRef.current.contains(event.target)){
+        setOpen(false);
+      }
+    };
+
+    const handleEscape=(event)=>{
+      if(event.key==='Escape')setOpen(false);
+    };
+
+    document.addEventListener('mousedown',handleOutsideClick);
+    document.addEventListener('touchstart',handleOutsideClick);
+    document.addEventListener('keydown',handleEscape);
+
+    return()=>{
+      document.removeEventListener('mousedown',handleOutsideClick);
+      document.removeEventListener('touchstart',handleOutsideClick);
+      document.removeEventListener('keydown',handleEscape);
+    };
+  },[open]);
   if(!user)return null;
   const meta=user.user_metadata||{};
   const username=meta.username||user.email?.split('@')[0]||'user';
@@ -34,7 +58,7 @@ export default function ProfileMenu({compact=false}){
     router.push('/signin');
   }
 
-  return <div className="profile-menu-wrap">
+  return <div ref={menuRef} className="profile-menu-wrap">
     <button className="profile-trigger" onClick={()=>setOpen(v=>!v)} aria-expanded={open} aria-haspopup="menu" aria-label="Open profile menu">
       <span className="profile-avatar">{avatar?<img src={avatar} alt=""/>:initial}</span>
       {!compact&&<span className="profile-trigger-name">{fullName}</span>}
