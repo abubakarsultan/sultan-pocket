@@ -7,7 +7,7 @@ import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,firstDayOf
 
 const BASE={
   type:'expense',amount:'',date:todayISO(),category:'Food',method:'cash',
-  source:'',person:'',merchant:'',notes:'',repayRequired:true,from:'cash',destination:'cash',attachment_path:''
+  source:'',person:'',merchant:'',notes:'',repayRequired:true,from:'cash',destination:'cash',attachment_path:'',goal_id:''
 };
 const TITLES={
   income:'Income',expense:'Expense',transfer:'Cash ↔ Online Transfer',
@@ -15,6 +15,7 @@ const TITLES={
   savings_add:'Add Savings',savings_use:'Use Savings',borrow:'Borrow Money',repay:'Repay Money'
 };
 function normalizeType(t){return t==='income_other'||t==='salary'?'income':t;}
+function isSavingsKind(t){return t==='savings_add'||t==='savings_use';}
 
 export default function WalletModal(){
   const {user,guest,add,update,addCategory,state,notify,month,currency}=useWallet();
@@ -28,6 +29,8 @@ export default function WalletModal(){
   const [attachmentPreview,setAttachmentPreview]=useState('');
   const [attachmentRemove,setAttachmentRemove]=useState(false);
   const [attachmentError,setAttachmentError]=useState('');
+  const [goals,setGoals]=useState([]);
+  const [goalBalances,setGoalBalances]=useState({});
   const attachmentInputRef=useRef(null);
 
   useEffect(()=>{
@@ -39,6 +42,28 @@ export default function WalletModal(){
     setAttachmentPreview(url);
     return()=>URL.revokeObjectURL(url);
   },[attachmentFile]);
+
+  useEffect(()=>{
+    if(!open||!isSavingsKind(kind)||!user)return;
+    let active=true;
+    (async()=>{
+      const [{data:goalRows,error:goalError},{data:txRows,error:txError}]=await Promise.all([
+        supabase.from('wallet_goals').select('id,name,target_amount,target_date').eq('user_id',user.id).order('created_at',{ascending:true}),
+        supabase.from('wallet_transactions').select('type,amount,details').eq('user_id',user.id).in('type',['savings_add','savings_use']),
+      ]);
+      if(!active)return;
+      if(goalError||txError){notify(goalError?.message||txError?.message||'Could not load savings goals.');return;}
+      const balances={};
+      for(const tx of txRows||[]){
+        const id=tx?.details?.goal_id;
+        if(!id)continue;
+        balances[id]=(balances[id]||0)+(tx.type==='savings_add'?Number(tx.amount)||0:-(Number(tx.amount)||0));
+      }
+      setGoals(goalRows||[]);
+      setGoalBalances(balances);
+    })();
+    return()=>{active=false;};
+  },[open,kind,user]);
 
   useEffect(()=>{
     function handleAdd(e){
@@ -59,6 +84,7 @@ export default function WalletModal(){
         type:nextKind,
         date:month===todayISO().slice(0,7)?todayISO():firstDayOfMonth(month),
         category:nextKind==='income'?'Monthly Salary':nextKind==='expense'?(preset.category||'Food'):'Food',
+        goal_id:preset.goal_id||preset.details?.goal_id||'',
         from:nextKind==='withdraw'?'online':(preset.from||'cash'),
         method:nextKind==='expense'&&preset.category==='Transport'?(preset.method||'etransit'):(preset.method||'cash'),
       });
@@ -85,6 +111,7 @@ export default function WalletModal(){
         destination:t.destination||'cash',
         repayRequired:t.repayRequired!==false,
         attachment_path:t.attachment_path||'',
+        goal_id:t.goal_id||t.details?.goal_id||'',
       });
       setOpen(true);
     }
@@ -174,6 +201,10 @@ export default function WalletModal(){
     e.preventDefault();
     setAttachmentError('');
     if(!form.amount||Number(form.amount)<=0){notify('Enter a valid amount.');return;}
+    if(isSavingsKind(kind) && kind==='savings_use' && form.goal_id && Number(form.amount)>(goalBalances[form.goal_id]||0)){
+      notify(`You can use at most ${money(goalBalances[form.goal_id]||0,currency)} from this goal.`);
+      return;
+    }
     if((kind==='borrow'||kind==='repay')&&!String(form.person||'').trim()){
       notify('Enter the person name.');return;
     }
@@ -194,6 +225,10 @@ export default function WalletModal(){
     }
     if(kind==='transfer'){
       tx={...tx,destination:form.from==='cash'?'online':'cash'};
+    }
+    if(isSavingsKind(kind)){
+      const selectedGoal=goals.find(g=>String(g.id)===String(form.goal_id));
+      tx={...tx,category:selectedGoal?.name||'General Savings',source:selectedGoal?.name||'General Savings',details:{...(tx.details||{}),goal_id:selectedGoal?.id||null,goal_name:selectedGoal?.name||'General Savings'}};
     }
 
     const oldPath=editingId?String(form.attachment_path||''):'';
@@ -238,7 +273,7 @@ export default function WalletModal(){
   const isIncome=kind==='income';
   const isBorrow=kind==='borrow';
   const isRepay=kind==='repay';
-  const isSavings=kind==='savings_add'||kind==='savings_use';
+  const isSavings=isSavingsKind(kind);
   const isTransfer=kind==='transfer'||kind==='withdraw';
   const isTransit=kind==='etransit_add';
 
@@ -306,11 +341,19 @@ export default function WalletModal(){
           </label>}
         </>}
 
-        {isSavings&&<label>{kind==='savings_add'?'Save from':'Return to'}
-          <select value={kind==='savings_add'?form.method:form.destination} onChange={e=>setField(kind==='savings_add'?'method':'destination',e.target.value)}>
-            <option value="cash">Cash</option><option value="online">Online</option>
-          </select>
-        </label>}
+        {isSavings&&<>
+          <label>Savings category
+            <select value={form.goal_id||''} onChange={e=>setField('goal_id',e.target.value)}>
+              <option value="">General savings</option>
+              {goals.map(goal=><option key={goal.id} value={goal.id}>{goal.name}</option>)}
+            </select>
+          </label>
+          <label>{kind==='savings_add'?'Save from':'Return to'}
+            <select value={kind==='savings_add'?form.method:form.destination} onChange={e=>setField(kind==='savings_add'?'method':'destination',e.target.value)}>
+              <option value="cash">Cash</option><option value="online">Online</option>
+            </select>
+          </label>
+        </>}
 
         {isTransit&&<label>Load from
           <select value={form.from} onChange={e=>setField('from',e.target.value)}>
