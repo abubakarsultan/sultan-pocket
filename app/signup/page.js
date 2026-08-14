@@ -60,10 +60,14 @@ export default function SignUpPage() {
       setError('That username is already taken. Please choose another.');
       return;
     }
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?next=/onboarding` : undefined;
     const { data, error: signUpErr } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, full_name: fullName } },
+      options: {
+        data: { username, full_name: fullName, currency: 'PKR' },
+        ...(redirectTo ? { emailRedirectTo: redirectTo } : {})
+      },
     });
     setBusy(false);
     if (signUpErr) {
