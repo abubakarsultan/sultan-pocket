@@ -7,7 +7,7 @@ import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,firstDayOf
 
 const BASE={
   type:'expense',amount:'',date:todayISO(),category:'Food',method:'cash',
-  source:'',person:'',notes:'',repayRequired:true,from:'cash',destination:'cash',attachment_path:''
+  source:'',person:'',merchant:'',notes:'',repayRequired:true,from:'cash',destination:'cash',attachment_path:''
 };
 const TITLES={
   income:'Income',expense:'Expense',transfer:'Cash ↔ Online Transfer',
@@ -249,7 +249,7 @@ export default function WalletModal(){
 
       <div className="wallet-form-grid">
         <label>Amount
-          <input type="number" min="1" step="1" value={form.amount} onChange={e=>setField('amount',e.target.value)} required autoFocus/>
+          <input type="number" min="1" step="1" inputMode="decimal" value={form.amount} onChange={e=>setField('amount',e.target.value)} required autoFocus/>
         </label>
         <label>Date
           <input type="date" value={form.date} onChange={e=>setField('date',e.target.value)} required/>
@@ -279,6 +279,10 @@ export default function WalletModal(){
             <small>This category will only appear in {isIncome?'Income':'Expense'} transactions.</small>
           </label>
         </>}
+
+        {isExpense&&<label className="full">Merchant (optional)
+          <input value={form.merchant||''} onChange={e=>setField('merchant',e.target.value)} placeholder="e.g. McDonald's"/>
+        </label>}
 
         {(isBorrow||isRepay)&&<>
           <label>Person

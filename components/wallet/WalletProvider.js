@@ -5,7 +5,7 @@ import {supabase} from '@/lib/supabaseClient';
 import {balances,todayISO} from '@/lib/wallet/calc';
 
 const C = createContext(null);
-const EMPTY = {transactions:[],customCategories:[]};
+const EMPTY = {transactions:[],customCategories:[],recurringRules:[]};
 
 const DEMO_TRANSACTIONS = [
   {id:'demo-1',type:'salary',amount:50000,date:'2026-08-01',category:'Monthly Salary',source:'Monthly Salary',method:'online',notes:'Demo income'},
@@ -51,6 +51,7 @@ function rowToTransaction(row){
     from:row.from_account||details.from||'',
     destination:row.destination||details.destination||'',
     attachment_path:row.attachment_path||details.attachment_path||'',
+    merchant:row.merchant||details.merchant||'',
     created_at:row.created_at,
     updated_at:row.updated_at,
   }])[0];
@@ -72,7 +73,43 @@ function transactionRow(tx,userId){
     from_account:tx.from||null,
     destination:tx.destination||null,
     attachment_path:tx.attachment_path||null,
+    merchant:tx.merchant||null,
     details:tx,
+  };
+}
+
+function recurringRow(rule,userId){
+  return {
+    id:rule.id,
+    user_id:userId,
+    type:rule.type,
+    amount:Number(rule.amount)||0,
+    day_of_month:Number(rule.day_of_month)||1,
+    category:rule.category||null,
+    method:rule.method||null,
+    source:rule.source||null,
+    person:rule.person||null,
+    notes:rule.notes||null,
+    details:rule.details||null,
+    active:rule.active!==false,
+  };
+}
+
+function rowToRecurring(row){
+  return {
+    id:row.id,
+    user_id:row.user_id,
+    type:row.type,
+    amount:Number(row.amount)||0,
+    day_of_month:Number(row.day_of_month)||1,
+    category:row.category||'',
+    method:row.method||'',
+    source:row.source||'',
+    person:row.person||'',
+    notes:row.notes||'',
+    details:row.details&&typeof row.details==='object'?row.details:{},
+    active:row.active!==false,
+    created_at:row.created_at,
   };
 }
 
@@ -130,15 +167,20 @@ export function WalletProvider({children}){
         return;
       }
       setLoading(true);
-      const [{data:txRows,error:txError},{data:catRows,error:catError}] = await Promise.all([
+      const [{data:txRows,error:txError},{data:catRows,error:catError},{data:recurringRows,error:recurringError}] = await Promise.all([
         supabase.from('wallet_transactions').select('*').eq('user_id',user.id).order('date',{ascending:true}).order('created_at',{ascending:true}),
         supabase.from('wallet_categories').select('id,name,type,created_at').eq('user_id',user.id).order('created_at',{ascending:true}),
+        supabase.from('wallet_recurring').select('*').eq('user_id',user.id).order('day_of_month',{ascending:true}).order('created_at',{ascending:true}),
       ]);
       if(dead)return;
       const transactions=(txRows||[]).map(rowToTransaction);
       const customCategories=(catRows||[]).map(c=>({id:c.id,name:c.name,type:c.type}));
-      setState({transactions,customCategories});
+      const recurringRules=(recurringRows||[]).map(rowToRecurring);
+      setState({transactions,customCategories,recurringRules});
       if(txError||catError) setToast('Wallet storage is unavailable. Check your Supabase schema.');
+      if(recurringError && !String(recurringError.message||'').toLowerCase().includes('wallet_recurring')) {
+        setToast(recurringError.message||'Could not load recurring rules.');
+      }
       setLoading(false);
     })();
     return()=>{dead=true;};
@@ -209,6 +251,77 @@ export function WalletProvider({children}){
     setSaving(false);
     setState(prev=>({...prev,transactions:prev.transactions.filter(t=>t.id!==id)}));
     notify(attachmentError||'Transaction deleted');
+    return true;
+  }
+
+  async function importTransactions(rows){
+    if(!user){notify('Please sign in to import transactions.');return {imported:0,errors:[{row:0,error:'Please sign in.'}]};}
+    const clean=Array.isArray(rows)?rows.map((tx,i)=>({
+      ...tx,
+      id:tx.id||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`,
+      amount:Number(tx.amount)||0,
+      date:tx.date||todayISO(),
+    })):[];
+    if(!clean.length)return {imported:0,errors:[]};
+    let working=[...state.transactions];
+    const valid=[],errors=[];
+    for(let i=0;i<clean.length;i++){
+      const tx=clean[i];
+      const message=getValidationMessage(tx,[...working,tx]);
+      if(message){errors.push({row:i+1,error:message,data:tx});continue;}
+      valid.push(tx);
+      working.push(tx);
+    }
+    if(!valid.length){notify('No valid transactions to import.');return {imported:0,errors};}
+    setSaving(true);
+    const rowsToInsert=valid.map(tx=>transactionRow(tx,user.id));
+    const {data,error}=await supabase.from('wallet_transactions').insert(rowsToInsert).select('*');
+    setSaving(false);
+    if(error){notify(error.message||'Could not import transactions.');return {imported:0,errors:[...errors,{row:0,error:error.message||'Import failed.'}]};}
+    const saved=(data||[]).map(rowToTransaction);
+    setState(prev=>({...prev,transactions:[...prev.transactions,...saved]}));
+    notify(`${saved.length} transaction${saved.length===1?'':'s'} imported`);
+    return {imported:saved.length,errors};
+  }
+
+  async function addRecurring(rule){
+    if(!user){notify('Please sign in to save recurring rules.');return false;}
+    const clean={...rule,amount:Number(rule.amount)||0,day_of_month:Number(rule.day_of_month)||1};
+    if(clean.amount<=0){notify('Enter a valid recurring amount.');return false;}
+    if(clean.day_of_month<1||clean.day_of_month>28){notify('Day of month must be between 1 and 28.');return false;}
+    setSaving(true);
+    const {data,error}=await supabase.from('wallet_recurring').insert(recurringRow(clean,user.id)).select('*').single();
+    setSaving(false);
+    if(error){notify(error.message||'Could not save recurring rule.');return false;}
+    setState(prev=>({...prev,recurringRules:[...prev.recurringRules,rowToRecurring(data)]}));
+    notify('Recurring rule saved');
+    return true;
+  }
+
+  async function updateRecurring(id,patch){
+    if(!user){notify('Please sign in to update recurring rules.');return false;}
+    const current=(state.recurringRules||[]).find(r=>r.id===id);
+    if(!current){notify('Recurring rule not found.');return false;}
+    const replacement={...current,...patch,id};
+    if(Number(replacement.amount)<=0){notify('Enter a valid recurring amount.');return false;}
+    if(Number(replacement.day_of_month)<1||Number(replacement.day_of_month)>28){notify('Day of month must be between 1 and 28.');return false;}
+    setSaving(true);
+    const {data,error}=await supabase.from('wallet_recurring').update(recurringRow(replacement,user.id)).eq('id',id).eq('user_id',user.id).select('*').maybeSingle();
+    setSaving(false);
+    if(error||!data){notify(error?.message||'Could not update recurring rule.');return false;}
+    setState(prev=>({...prev,recurringRules:prev.recurringRules.map(r=>r.id===id?rowToRecurring(data):r)}));
+    notify('Recurring rule updated');
+    return true;
+  }
+
+  async function removeRecurring(id){
+    if(!user){notify('Please sign in to delete recurring rules.');return false;}
+    setSaving(true);
+    const {data,error}=await supabase.from('wallet_recurring').delete().eq('id',id).eq('user_id',user.id).select('id').maybeSingle();
+    setSaving(false);
+    if(error||!data){notify(error?.message||'Could not delete recurring rule.');return false;}
+    setState(prev=>({...prev,recurringRules:prev.recurringRules.filter(r=>r.id!==id)}));
+    notify('Recurring rule deleted');
     return true;
   }
 

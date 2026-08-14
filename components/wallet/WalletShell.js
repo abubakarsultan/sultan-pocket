@@ -13,12 +13,13 @@ const NAV = [
   ['/dashboard/wallet/transport', '◉', 'Transport'],
   ['/dashboard/wallet/savings', '▱', 'Savings'],
   ['/dashboard/wallet/debt', '◌', 'Debt & Borrowing'],
-  ['/dashboard/wallet/charts', '◒', 'Charts & Stats']
+  ['/dashboard/wallet/charts', '◒', 'Charts & Stats'],
+  ['/dashboard/wallet/recurring', '↻', 'Recurring']
 ];
 
 export default function WalletShell({
   children,
-  title = 'Manage your money'
+  title = 'Expense Tracker'
 }) {
   const p = usePathname();
   const r = useRouter();
@@ -180,12 +181,27 @@ export default function WalletShell({
         </main>
 
 
+        <button
+          type="button"
+          className="wallet-mobile-fab"
+          aria-label="Add expense"
+          onClick={() =>
+            protectedAction(() =>
+              window.dispatchEvent(
+                new CustomEvent('wallet:add', { detail: 'expense' })
+              )
+            )
+          }
+        >
+          +
+        </button>
+
         {/* Mobile navigation */}
         <nav
           className="wallet-mobile-nav"
           aria-label="Wallet navigation"
         >
-          {NAV.slice(0, 5).map(
+          {NAV.map(
             ([href, ic, label]) => (
               <Link
                 className={p === href ? 'active' : ''}
@@ -199,7 +215,9 @@ export default function WalletShell({
                 <span>
                   {label === 'Debt & Borrowing'
                     ? 'Debt'
-                    : label}
+                    : label === 'Charts & Stats'
+                      ? 'Charts'
+                      : label}
                 </span>
               </Link>
             )

@@ -12,7 +12,10 @@ import {
   monthOf,
   shiftMonth,
   stats,
-  transactionLabel
+  transactionLabel,
+  todayISO,
+  monthSummary,
+  TYPES
 } from '@/lib/wallet/calc';
 
 
@@ -202,7 +205,8 @@ function useData() {
     user,
     month,
     demoTransactions,
-    currency
+    currency,
+    add
   } = useWallet();
 
   const tx = user
@@ -218,10 +222,57 @@ function useData() {
     s,
     b: s.balances,
     state,
-    currency
+    currency,
+    add
   };
 }
 
+
+
+function UpcomingRecurring({rules,transactions,add,currency,user}){
+  const currentMonth=todayISO().slice(0,7);
+  const today=Number(todayISO().slice(8,10));
+  const upcoming=(rules||[]).filter(rule=>{
+    if(!rule.active||Number(rule.day_of_month)>today)return false;
+    return !(transactions||[]).some(t=>
+      monthOf(t.date)===currentMonth &&
+      t.type===rule.type &&
+      Number(t.amount)===Number(rule.amount) &&
+      String(t.category||'')===String(rule.category||'')
+    );
+  });
+
+  if(!user||!rules?.length)return null;
+
+  async function addRule(rule){
+    const ok=await add({
+      type:rule.type,
+      amount:Number(rule.amount),
+      date:todayISO(),
+      category:rule.category||'',
+      method:rule.method||'',
+      source:rule.source||rule.category||'',
+      person:rule.person||'',
+      notes:rule.notes||'',
+      repayRequired:true
+    });
+    if(!ok)return;
+  }
+
+  return <section className="wallet-panel upcoming-panel">
+    <div className="wallet-panel-head">
+      <div><span className="wallet-section-kicker">UPCOMING THIS MONTH</span><h2>Recurring transactions</h2></div>
+      <Link className="wallet-text-link" href="/dashboard/wallet/recurring">Manage rules →</Link>
+    </div>
+    {!upcoming.length?<p className="chart-note">Nothing is waiting to be added for {monthLabel(currentMonth)}.</p>:<div className="upcoming-list">
+      {upcoming.map(rule=><div className="upcoming-row" key={rule.id}>
+        <div><strong>{rule.category||transactionLabel(rule)}</strong><small>{transactionLabel(rule)} · Day {rule.day_of_month}</small></div>
+        <b>{money(rule.amount,currency)}</b>
+        <button className="wallet-btn primary" onClick={()=>addRule(rule)}>+ Add to Wallet</button>
+      </div>)}
+    </div>}
+  </section>;
+}
 
 /* =========================
    DASHBOARD
@@ -244,7 +295,9 @@ function DashboardInner() {
     month,
     s,
     b,
-    currency
+    currency,
+    add,
+    state
   } = useData();
 
   const recent = tx
@@ -319,6 +372,13 @@ function DashboardInner() {
 
       <Actions items={actions} />
 
+      <UpcomingRecurring
+        rules={state?.recurringRules||[]}
+        transactions={tx}
+        add={add}
+        currency={currency}
+        user={user}
+      />
 
       <div className="wallet-grid four">
 
@@ -376,6 +436,7 @@ function DashboardInner() {
 
       </div>
 
+      <MonthlySummary transactions={tx} month={month} currency={currency} />
 
       <div className="wallet-grid two">
 
@@ -589,6 +650,27 @@ function DashboardInner() {
 }
 
 
+
+function MonthlySummary({transactions,month,currency}){
+  const summary=monthSummary(transactions,month);
+  const rows=[
+    ['Opening',summary.opening],
+    ['Income',summary.income],
+    ['Expenses',summary.expenses],
+    ['Savings',summary.savings],
+    ['Transport',summary.transport],
+    ['Closing',summary.closing]
+  ];
+  return <section className="wallet-panel monthly-summary">
+    <div className="wallet-panel-head">
+      <div><span className="wallet-section-kicker">MONTHLY CLOSING SUMMARY</span><h2>{monthLabel(month)}</h2></div>
+    </div>
+    <div className="monthly-summary-grid">
+      {rows.map(([label,value])=><div key={label}><span>{label}</span><strong>{money(value,currency)}</strong></div>)}
+    </div>
+  </section>;
+}
+
 /* =========================
    CATEGORY SUMMARY
 ========================= */
@@ -690,7 +772,7 @@ export function Transactions() {
 
 function TransactionsInner() {
 
-  const { user, tx } = useData();
+  const { user, tx, importTransactions } = useData();
 
   const [search, setSearch] =
     useState('');
@@ -710,6 +792,10 @@ function TransactionsInner() {
   const [filterMonth, setFilterMonth] =
     useState('all');
 
+  const [importRows,setImportRows]=useState([]);
+  const [importErrors,setImportErrors]=useState([]);
+  const [importFileName,setImportFileName]=useState('');
+  const [importBusy,setImportBusy]=useState(false);
 
   const categories = [
     ...new Set(
@@ -752,6 +838,7 @@ function TransactionsInner() {
             t.source,
             t.person,
             t.notes,
+            t.merchant,
             t.type,
             t.method
           ].some(v =>
@@ -792,6 +879,35 @@ function TransactionsInner() {
   );
 
 
+  async function handleImportFile(e){
+    const file=e.target.files?.[0];
+    e.target.value='';
+    setImportRows([]);setImportErrors([]);setImportFileName('');
+    if(!file)return;
+    if(!/\.csv$/i.test(file.name)){setImportErrors([{row:0,error:'Please select a CSV file.'}]);return;}
+    try{
+      const text=await file.text();
+      const parsed=parseWalletCSV(text);
+      setImportFileName(file.name);
+      setImportRows(parsed.rows);
+      setImportErrors(parsed.errors);
+    }catch(err){
+      setImportErrors([{row:0,error:err.message||'Could not read the CSV file.'}]);
+    }
+  }
+
+  async function confirmImport(){
+    if(!importRows.length)return;
+    setImportBusy(true);
+    const result=await importTransactions(importRows);
+    setImportBusy(false);
+    setImportErrors(prev=>[...prev,...(result.errors||[])]);
+    if(result.imported>0){
+      setImportRows([]);
+      setImportFileName('');
+    }
+  }
+
   function reset() {
     setSearch('');
     setType('all');
@@ -826,20 +942,36 @@ function TransactionsInner() {
           </span>
 
           {user && (
-            <button
-              className="wallet-btn export-btn"
-              onClick={() =>
-                exportCSV(filtered)
-              }
-            >
-              ↓ Export CSV
-            </button>
+            <>
+              <button
+                className="wallet-btn export-btn"
+                onClick={() =>
+                  exportCSV(filtered)
+                }
+              >
+                ↓ Export CSV
+              </button>
+              <input id="wallet-csv-import" type="file" accept=".csv,text/csv" hidden onChange={handleImportFile}/>
+              <label className="wallet-btn secondary csv-import-trigger" htmlFor="wallet-csv-import">↑ Import CSV</label>
+            </>
           )}
 
         </div>
 
       </div>
 
+      {importFileName&&<div className="csv-import-wrap"><span className="csv-import-file">{importFileName}</span></div>}
+
+      {(importRows.length>0||importErrors.length>0)&&<div className="csv-import-preview">
+        <div className="wallet-panel-head">
+          <div><span className="wallet-section-kicker">CSV IMPORT PREVIEW</span><h2>{importRows.length} transactions found, ready to import</h2></div>
+          <button className="wallet-btn secondary" onClick={()=>{setImportRows([]);setImportErrors([]);setImportFileName('');}}>Clear</button>
+        </div>
+        {importRows.length>0&&<div className="csv-preview-table"><table className="wallet-table"><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Category</th><th>Merchant</th></tr></thead><tbody>{importRows.slice(0,8).map((r,i)=><tr key={i}><td>{r.date}</td><td>{transactionLabel(r)}</td><td>{r.amount}</td><td>{r.category||'—'}</td><td>{r.merchant||'—'}</td></tr>)}</tbody></table></div>}
+        {importRows.length>8&&<p className="chart-note">Showing the first 8 rows.</p>}
+        {importErrors.length>0&&<div className="csv-import-errors">{importErrors.map((e,i)=><div key={`${e.row}-${i}`}>Row {e.row||'—'}: {e.error}</div>)}</div>}
+        {importRows.length>0&&<button className="wallet-btn primary" onClick={confirmImport} disabled={importBusy}>{importBusy?'Importing…':`Confirm import (${importRows.length})`}</button>}
+      </div>}
 
       <div className="wallet-filters">
 
@@ -1468,6 +1600,79 @@ function ConfirmDelete({
 /* =========================
    HELPERS
 ========================= */
+
+
+function parseWalletCSV(text){
+  const rows=parseCSVText(text);
+  if(rows.length<2)return {rows:[],errors:[{row:0,error:'CSV must contain a header row and at least one transaction.'}]};
+  const headers=rows[0].map(v=>String(v||'').trim().toLowerCase());
+  const index=name=>headers.indexOf(name.toLowerCase());
+  const required=['date','type','amount'];
+  const missing=required.filter(name=>index(name)<0);
+  if(missing.length)return {rows:[],errors:[{row:1,error:`Missing required column(s): ${missing.join(', ')}`}]};
+  const typeMap={
+    'salary':'salary','monthly salary':'salary',
+    'income_other':'income_other','other income':'income_other',
+    'expense':'expense',
+    'transfer':'transfer','cash / online transfer':'transfer',
+    'withdraw':'withdraw','withdraw online → cash':'withdraw','withdraw online -> cash':'withdraw',
+    'etransit_add':'etransit_add','e-transit top-up':'etransit_add',
+    'savings_add':'savings_add','savings added':'savings_add',
+    'savings_use':'savings_use','savings used':'savings_use',
+    'borrow':'borrow','borrowed money':'borrow',
+    'repay':'repay','debt repayment':'repay'
+  };
+  const methodMap={'cash':'cash','online':'online','e-transit wallet':'etransit','etransit':'etransit'};
+  const validTypes=new Set(Object.keys(TYPES));
+  const out=[],errors=[];
+  rows.slice(1).forEach((raw,i)=>{
+    const rowNumber=i+2;
+    if(raw.every(v=>!String(v||'').trim()))return;
+    const get=name=>index(name)>=0?String(raw[index(name)]||'').trim():'';
+    const rawType=get('type').toLowerCase();
+    const type=typeMap[rawType]||rawType;
+    const amount=Number(get('amount'));
+    const date=get('date');
+    if(!validTypes.has(type)){errors.push({row:rowNumber,error:`Unknown transaction type "${get('type')}".`});return;}
+    if(!Number.isFinite(amount)||amount<=0){errors.push({row:rowNumber,error:'Amount must be a positive number.'});return;}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){errors.push({row:rowNumber,error:'Date must use YYYY-MM-DD.'});return;}
+    const d=new Date(`${date}T00:00:00Z`);
+    if(Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==date){errors.push({row:rowNumber,error:'Date is invalid.'});return;}
+    const rawMethod=get('method');
+    const tx={
+      type,amount,date,
+      category:get('category'),
+      source:get('source'),
+      method:methodMap[rawMethod.toLowerCase()]||rawMethod.toLowerCase(),
+      person:get('person'),
+      merchant:get('merchant'),
+      notes:get('notes')
+    };
+    if(type==='transfer'||type==='withdraw'||type==='etransit_add')tx.from=tx.method==='cash'?'cash':'online';
+    if(type==='borrow')tx.repayRequired=true;
+    out.push(tx);
+  });
+  return {rows:out,errors};
+}
+
+function parseCSVText(text){
+  const rows=[];let row=[];let cell='';let quoted=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){
+      if(quoted&&text[i+1]==='"'){cell+='"';i++;}
+      else quoted=!quoted;
+    }else if(ch===','&&!quoted){row.push(cell);cell='';}
+    else if((ch==='\\n'||ch==='\\r')&&!quoted){
+      if(ch==='\\r'&&text[i+1]==='\\n')i++;
+      row.push(cell);cell='';
+      if(row.some(v=>v!==''))rows.push(row);
+      row=[];
+    }else cell+=ch;
+  }
+  if(cell!==''||row.length){row.push(cell);if(row.some(v=>v!==''))rows.push(row);}
+  return rows;
+}
 
 function displayMethod(method) {
 
