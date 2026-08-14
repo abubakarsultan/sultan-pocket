@@ -81,6 +81,18 @@ export default function ProfilePage(){
     }catch(e){if(uploadedPath)await supabase.storage.from('avatars').remove([uploadedPath]);setError(e.message||'Could not update your profile.');setBusy(false);}
   }
 
+  async function signOut(){
+    setBusy(true);
+    setError('');
+    const {error:e}=await supabase.auth.signOut();
+    if(e){
+      setError(e.message||'Could not sign out.');
+      setBusy(false);
+      return;
+    }
+    router.replace('/');
+  }
+
   async function changePassword(){if(newPassword.length<6){setError('Password must be at least 6 characters.');return;}setBusy(true);setError('');const {error:e}=await supabase.auth.updateUser({password:newPassword});setBusy(false);if(e)setError(e.message);else{setNewPassword('');setNotice('Password updated successfully.');}}
   function csvCell(value){
     return `"${String(value ?? '').replaceAll('"','""')}"`;
