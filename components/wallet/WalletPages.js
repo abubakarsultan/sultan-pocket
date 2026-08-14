@@ -24,10 +24,10 @@ import {
 ========================= */
 
 function Actions({ items }) {
-  const { user } = useWallet();
+  const { user, guest, guestLimitReached } = useWallet();
 
   const run = (detail) => {
-    if (user) {
+    if (user || (guest && !guestLimitReached)) {
       window.dispatchEvent(
         new CustomEvent('wallet:add', {
           detail
@@ -35,7 +35,7 @@ function Actions({ items }) {
       );
     } else {
       window.dispatchEvent(
-        new CustomEvent('wallet:gate')
+        new CustomEvent('wallet:guest-limit')
       );
     }
   };
@@ -93,8 +93,7 @@ function Actions({ items }) {
 
       {!user && (
         <small className="wallet-action-note">
-          Guest mode is read-only. Sign in to add,
-          edit, delete, or save transactions.
+          Guest mode: transactions are saved only on this device. You can save up to 3 transactions; create a free account for unlimited cloud storage.
         </small>
       )}
 
@@ -165,35 +164,23 @@ function Card({
 
 function DemoNotice() {
   const router = useRouter();
+  const {guestTransactionsUsed, guestTransactionLimit, basePath} = useWallet();
 
   return (
     <div className="wallet-demo">
-
-      <b>
-        Guest browsing
-      </b>
-
+      <b>Guest mode</b>
       <span>
-        Explore the Wallet with demo data.
-        Personal data and all write actions
-        require an account.
+        Your data is saved on this device only. {guestTransactionsUsed}/{guestTransactionLimit} transaction slots used. Create a free account to keep your data safely in the cloud and use Sultan Pocket across devices.
       </span>
-
       <button
         className="wallet-btn primary"
-        onClick={() =>
-          router.push(
-            '/signin?next=/dashboard/wallet'
-          )
-        }
+        onClick={() => router.push(`/signup?next=${encodeURIComponent(basePath)}`)}
       >
-        Sign in
+        Create free account
       </button>
-
     </div>
   );
 }
-
 
 /* =========================
    DATA
@@ -204,14 +191,11 @@ function useData() {
     state,
     user,
     month,
-    demoTransactions,
     currency,
     add
   } = useWallet();
 
-  const tx = user
-    ? state.transactions
-    : demoTransactions;
+  const tx = state.transactions;
 
   const s = stats(tx, month);
 
@@ -229,7 +213,7 @@ function useData() {
 
 
 
-function UpcomingRecurring({rules,transactions,add,currency,user}){
+function UpcomingRecurring({rules,transactions,add,currency,user,basePath}){
   const currentMonth=todayISO().slice(0,7);
   const today=Number(todayISO().slice(8,10));
   const upcoming=(rules||[]).filter(rule=>{
@@ -262,7 +246,7 @@ function UpcomingRecurring({rules,transactions,add,currency,user}){
   return <section className="wallet-panel upcoming-panel">
     <div className="wallet-panel-head">
       <div><span className="wallet-section-kicker">UPCOMING THIS MONTH</span><h2>Recurring transactions</h2></div>
-      <Link className="wallet-text-link" href="/dashboard/wallet/recurring">Manage rules →</Link>
+      <Link className="wallet-text-link" href={`${basePath}/recurring`}>Manage rules →</Link>
     </div>
     {!upcoming.length?<p className="chart-note">Nothing is waiting to be added for {monthLabel(currentMonth)}.</p>:<div className="upcoming-list">
       {upcoming.map(rule=><div className="upcoming-row" key={rule.id}>
@@ -299,6 +283,8 @@ function DashboardInner() {
     add,
     state
   } = useData();
+
+  const {basePath}=useWallet();
 
   const recent = tx
     .slice()
@@ -378,6 +364,7 @@ function DashboardInner() {
         add={add}
         currency={currency}
         user={user}
+        basePath={basePath}
       />
 
       <div className="wallet-grid four">
@@ -559,7 +546,7 @@ function DashboardInner() {
 
             <Link
               className="wallet-text-link"
-              href="/dashboard/wallet/transactions"
+              href={`${basePath}/transactions`}
             >
               View all →
             </Link>
@@ -773,6 +760,7 @@ export function Transactions() {
 function TransactionsInner() {
 
   const { user, tx, importTransactions } = useData();
+  const { guest } = useWallet();
 
   const [search, setSearch] =
     useState('');
@@ -941,20 +929,16 @@ function TransactionsInner() {
             {filtered.length} shown
           </span>
 
-          {user && (
-            <>
-              <button
-                className="wallet-btn export-btn"
-                onClick={() =>
-                  exportCSV(filtered)
-                }
-              >
-                ↓ Export CSV
-              </button>
-              <input id="wallet-csv-import" type="file" accept=".csv,text/csv" hidden onChange={handleImportFile}/>
-              <label className="wallet-btn secondary csv-import-trigger" htmlFor="wallet-csv-import">↑ Import CSV</label>
-            </>
-          )}
+          <>
+            <button
+              className="wallet-btn export-btn"
+              onClick={() => exportCSV(filtered)}
+            >
+              ↓ Export CSV
+            </button>
+            <input id="wallet-csv-import" type="file" accept=".csv,text/csv" hidden onChange={handleImportFile}/>
+            <label className="wallet-btn secondary csv-import-trigger" htmlFor="wallet-csv-import">↑ Import CSV</label>
+          </>
 
         </div>
 
@@ -1094,8 +1078,7 @@ function TransactionsInner() {
 
       {!user && (
         <div className="wallet-readonly-note">
-          Guest transactions are demo data
-          and cannot be edited or deleted.
+          Guest transactions can be edited or deleted on this device. Cloud storage, attachments, recurring rules, and unlimited transactions require an account.
         </div>
       )}
 
@@ -1131,6 +1114,7 @@ function TxTable({
   const {
     remove,
     user,
+    guest,
     currency
   } = useWallet();
 
@@ -1274,7 +1258,7 @@ function TxTable({
 
                   <div className="table-actions">
 
-                    {user ? (
+                    {user || guest ? (
                       <>
                         <button
                           className="table-action edit"
@@ -1409,7 +1393,7 @@ function TxTable({
 
             <div className="wallet-mobile-tx-actions">
 
-              {user ? (
+              {user || guest ? (
                 <>
                   <button
                     className="table-action edit"

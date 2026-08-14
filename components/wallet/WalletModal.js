@@ -17,7 +17,7 @@ const TITLES={
 function normalizeType(t){return t==='income_other'||t==='salary'?'income':t;}
 
 export default function WalletModal(){
-  const {user,add,update,addCategory,state,notify,month,currency}=useWallet();
+  const {user,guest,add,update,addCategory,state,notify,month,currency}=useWallet();
   const [open,setOpen]=useState(false);
   const [kind,setKind]=useState('expense');
   const [editingId,setEditingId]=useState(null);
@@ -42,7 +42,7 @@ export default function WalletModal(){
 
   useEffect(()=>{
     function handleAdd(e){
-      if(!user)return;
+      if(!user && !guest)return;
       const detail=e.detail||'expense';
       const nextKind=typeof detail==='string'?detail:detail.type||'expense';
       const preset=typeof detail==='object'?detail:{};
@@ -65,7 +65,7 @@ export default function WalletModal(){
       setOpen(true);
     }
     function handleEdit(e){
-      if(!user||!e.detail)return;
+      if(!user && !guest)return;
       const t=e.detail;
       const k=normalizeType(t.type);
       setEditingId(t.id);
@@ -114,6 +114,11 @@ export default function WalletModal(){
   const close=()=>{if(!busy){setOpen(false);setEditingId(null);}};
 
   function handleAttachmentChange(e){
+    if(!user){
+      setAttachmentError('Receipt uploads require an account.');
+      e.target.value='';
+      return;
+    }
     const file=e.target.files?.[0];
     setAttachmentError('');
     if(!file)return;
@@ -331,7 +336,9 @@ export default function WalletModal(){
             type="file"
             accept="image/*"
             onChange={handleAttachmentChange}
+            disabled={!user}
           />
+          {!user && <small>Receipt uploads are available after you create an account.</small>}
 
           {attachmentPreview && (
             <div className="wallet-attachment-preview">

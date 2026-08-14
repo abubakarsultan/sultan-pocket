@@ -2,10 +2,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const FEATURES = [
-  { icon: '💳', title: 'Expense tracking', desc: 'Record everyday spending across cash, online payments, and transport in one organized wallet.', href: '/dashboard/wallet' },
-  { icon: '💰', title: 'Income tracking', desc: 'Keep your salary and other income visible so you always know where your money comes from.', href: '/dashboard/wallet' },
+  { icon: '💳', title: 'Expense tracking', desc: 'Record everyday spending across cash, online payments, and transport in one organized wallet.', href: '/expense-tracker' },
+  { icon: '💰', title: 'Income tracking', desc: 'Keep your salary and other income visible so you always know where your money comes from.', href: '/expense-tracker' },
   { icon: '🎯', title: 'Savings goals', desc: 'Move money into savings and track how much you have set aside over time.', href: '/services' },
-  { icon: '📊', title: 'Clear insights', desc: 'Understand your spending with monthly summaries, categories, balances, and wallet activity.', href: '/dashboard/wallet' },
+  { icon: '📊', title: 'Clear insights', desc: 'Understand your spending with monthly summaries, categories, balances, and wallet activity.', href: '/expense-tracker' },
   { icon: '🔄', title: 'Easy transfers', desc: 'Move money between Cash and Online without creating unnecessary income or expense entries.', href: '/services' },
   { icon: '🛡️', title: 'Your personal wallet', desc: 'Your account keeps your financial records separate and accessible when you sign in.', href: '/privacy' },
 ];
@@ -34,7 +34,7 @@ export default function HomePage() {
             <p>Track expenses, record income, manage savings, and understand your monthly money flow — all from one simple personal wallet.</p>
             <div className="hero-actions">
               <Link href="/signup" className="btn btn-primary hero-btn">Get started free →</Link>
-              <Link href="/dashboard/wallet" className="btn hero-btn-secondary">Open expense tracker</Link>
+              <Link href="/expense-tracker" className="btn hero-btn-secondary">Open expense tracker</Link>
             </div>
             <div className="hero-trust"><span>✓ Cash & Online</span><span>✓ Savings</span><span>✓ Monthly tracking</span></div>
           </div>

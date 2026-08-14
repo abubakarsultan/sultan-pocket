@@ -6,14 +6,14 @@ import { useWallet } from './WalletProvider';
 import { monthLabel, shiftMonth } from '@/lib/wallet/calc';
 import { useEffect, useState } from 'react';
 
-const NAV = [
-  ['/dashboard/wallet', '▦', 'Dashboard'],
-  ['/dashboard/wallet/transactions', '↔', 'Transactions'],
-  ['/dashboard/wallet/transport', '◉', 'Transport'],
-  ['/dashboard/wallet/savings', '▱', 'Savings'],
-  ['/dashboard/wallet/debt', '◌', 'Debt & Borrowing'],
-  ['/dashboard/wallet/charts', '◒', 'Charts & Stats'],
-  ['/dashboard/wallet/recurring', '↻', 'Recurring']
+const NAV_ITEMS = [
+  ['', '▦', 'Dashboard'],
+  ['/transactions', '↔', 'Transactions'],
+  ['/transport', '◉', 'Transport'],
+  ['/savings', '▱', 'Savings'],
+  ['/debt', '◌', 'Debt & Borrowing'],
+  ['/charts', '◒', 'Charts & Stats'],
+  ['/recurring', '↻', 'Recurring']
 ];
 
 export default function WalletShell({
@@ -23,23 +23,29 @@ export default function WalletShell({
   const p = usePathname();
   const r = useRouter();
 
-  const { user, saving, month, setMonth } = useWallet();
+  const { user, saving, month, setMonth, basePath, guest, guestLimitReached } = useWallet();
+  const NAV = NAV_ITEMS.map(([suffix,ic,label])=>[`${basePath}${suffix}`,ic,label]);
   const [gate, setGate] = useState(false);
+  const [gateReason, setGateReason] = useState('guest');
 
   useEffect(() => {
-    const open = () => setGate(true);
+    const open = () => { setGateReason('guest'); setGate(true); };
+    const openLimit = () => { setGateReason('limit'); setGate(true); };
 
     window.addEventListener('wallet:gate', open);
+    window.addEventListener('wallet:guest-limit', openLimit);
 
     return () => {
       window.removeEventListener('wallet:gate', open);
+      window.removeEventListener('wallet:guest-limit', openLimit);
     };
   }, []);
 
   const protectedAction = (fn) => {
-    if (user) {
+    if (user || (guest && !guestLimitReached)) {
       fn();
     } else {
+      setGateReason('limit');
       setGate(true);
     }
   };
@@ -51,7 +57,7 @@ export default function WalletShell({
       <aside className="wallet-sidebar">
 
         <Link
-          href="/dashboard/wallet"
+          href={basePath}
           className="wallet-brand"
         >
           <span>💳</span>
@@ -73,8 +79,8 @@ export default function WalletShell({
 
         <div className="wallet-side-foot">
 
-          <Link href="/dashboard">
-            ← Main dashboard
+          <Link href={user ? '/dashboard' : '/'}>
+            {user ? '← Main dashboard' : '← Sultan Pocket home'}
           </Link>
 
           {user ? (
@@ -88,8 +94,8 @@ export default function WalletShell({
               View profile
             </Link>
           ) : (
-            <button onClick={() => setGate(true)}>
-              Guest mode · Sign in
+            <button onClick={() => {setGateReason('guest');setGate(true)}}>
+              Guest mode · Create account
             </button>
           )}
 
@@ -230,6 +236,8 @@ export default function WalletShell({
         <GateModal
           close={() => setGate(false)}
           router={r}
+          basePath={basePath}
+          reason={gateReason}
         />
       )}
 
@@ -238,7 +246,7 @@ export default function WalletShell({
 }
 
 
-function GateModal({ close, router }) {
+function GateModal({ close, router, basePath, reason }) {
   return (
     <div className="gate-backdrop">
 
@@ -257,17 +265,17 @@ function GateModal({ close, router }) {
         </div>
 
         <span className="wallet-modal-kicker">
-          GUEST MODE
+          {reason === 'limit' ? 'GUEST LIMIT' : 'GUEST MODE'}
         </span>
 
         <h2>
-          Sign in to continue
+          {reason === 'limit' ? 'Ready to save more?' : 'Use Sultan Pocket for free'}
         </h2>
 
         <p>
-          You can browse the Wallet in guest mode,
-          but saving, editing, deleting, categories,
-          and personal data require an account.
+          {reason === 'limit'
+            ? 'You can try Sultan Pocket as a guest, but guest storage is limited. Create a free account to save unlimited transactions and keep your data across devices.'
+            : 'Try the Expense Tracker without signing up. Your guest transactions are saved only on this device. Create an account when you are ready for permanent cloud storage.'}
         </p>
 
         <div className="gate-buttons">
@@ -276,7 +284,7 @@ function GateModal({ close, router }) {
             className="wallet-btn primary"
             onClick={() =>
               router.push(
-                '/signin?next=/dashboard/wallet'
+                `/signin?next=${encodeURIComponent(basePath)}`
               )
             }
           >
@@ -287,7 +295,7 @@ function GateModal({ close, router }) {
             className="wallet-btn"
             onClick={() =>
               router.push(
-                '/signup?next=/dashboard/wallet'
+                `/signup?next=${encodeURIComponent(basePath)}`
               )
             }
           >

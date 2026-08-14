@@ -1,11 +1,15 @@
 'use client';
 
 import {createContext,useContext,useEffect,useMemo,useState} from 'react';
+import {usePathname} from 'next/navigation';
 import {supabase} from '@/lib/supabaseClient';
 import {balances,todayISO} from '@/lib/wallet/calc';
 
 const C = createContext(null);
 const EMPTY = {transactions:[],customCategories:[],recurringRules:[]};
+const GUEST_STORAGE_KEY = 'sultan-pocket-guest-v1';
+const GUEST_TRANSACTION_LIMIT = 3;
+const GUEST_INTERACTION_LIMIT = 10;
 
 const DEMO_TRANSACTIONS = [
   {id:'demo-1',type:'salary',amount:50000,date:'2026-08-01',category:'Monthly Salary',source:'Monthly Salary',method:'online',notes:'Demo income'},
@@ -142,13 +146,43 @@ function getValidationMessage(tx, nextTransactions){
   return '';
 }
 
+
+function readGuestData(){
+  if(typeof window==='undefined')return {transactions:[],customCategories:[],recurringRules:[],interactionCount:0};
+  try{
+    const raw=window.localStorage.getItem(GUEST_STORAGE_KEY);
+    if(!raw)return {transactions:[],customCategories:[],recurringRules:[],interactionCount:0};
+    const parsed=JSON.parse(raw)||{};
+    return {
+      transactions:normalizeTransactions(parsed.transactions),
+      customCategories:normalizeCategories(parsed.customCategories),
+      recurringRules:[],
+      interactionCount:Math.max(0,Number(parsed.interactionCount)||0)
+    };
+  }catch{return {transactions:[],customCategories:[],recurringRules:[],interactionCount:0};}
+}
+
+function writeGuestData(data){
+  if(typeof window==='undefined')return;
+  try{
+    window.localStorage.setItem(GUEST_STORAGE_KEY,JSON.stringify({
+      transactions:data.transactions||[],
+      customCategories:data.customCategories||[],
+      interactionCount:Number(data.interactionCount)||0
+    }));
+  }catch{}
+}
+
 export function WalletProvider({children}){
+  const pathname=usePathname();
   const [state,setState]=useState(EMPTY);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [toast,setToast]=useState('');
   const [month,setMonth]=useState(()=>new Date().toISOString().slice(0,7));
   const [user,setUser]=useState(null);
+  const [guestReady,setGuestReady]=useState(false);
+  const [guestInteractions,setGuestInteractions]=useState(0);
 
   useEffect(()=>{
     let active=true;
@@ -160,10 +194,18 @@ export function WalletProvider({children}){
   },[]);
 
   useEffect(()=>{
+    if(user){setGuestReady(false);return;}
+    const guest=readGuestData();
+    setState(guest);
+    setGuestInteractions(guest.interactionCount);
+    setGuestReady(true);
+  },[user]);
+
+  useEffect(()=>{
     let dead=false;
     (async()=>{
       if(!user){
-        if(!dead){setState(EMPTY);setLoading(false);}
+        if(!dead){setLoading(false);}
         return;
       }
       setLoading(true);
@@ -192,8 +234,32 @@ export function WalletProvider({children}){
     window.__walletToastTimer = window.setTimeout(()=>setToast(''),2400);
   };
 
+  function saveGuestState(nextState){
+    setState(nextState);
+    writeGuestData({...nextState,interactionCount:guestInteractions});
+  }
+
+  function guestGate(message='Create a free account to keep using Sultan Pocket.') {
+    notify(message);
+    window.dispatchEvent(new CustomEvent('wallet:guest-limit'));
+  }
+
   async function add(tx){
-    if(!user){notify('Please sign in to save changes.');return false;}
+    if(!user){
+      if(!guestReady)return false;
+      if(state.transactions.length>=GUEST_TRANSACTION_LIMIT){
+        guestGate('Guest limit reached. Create a free account to save more transactions.');
+        return false;
+      }
+      const id=tx.id||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const nextTx={...tx,id,date:tx.date||todayISO()};
+      const validation=getValidationMessage(nextTx,[...state.transactions,nextTx]);
+      if(validation){notify(validation);return false;}
+      const nextState={...state,transactions:[...state.transactions,nextTx]};
+      saveGuestState(nextState);
+      notify(`Saved on this device · ${nextState.transactions.length}/${GUEST_TRANSACTION_LIMIT}`);
+      return true;
+    }
     const id=tx.id||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const nextTx={...tx,id,date:tx.date||todayISO()};
     const validation=getValidationMessage(nextTx,[...state.transactions,nextTx]);
@@ -210,7 +276,17 @@ export function WalletProvider({children}){
   }
 
   async function update(id,patch){
-    if(!user){notify('Please sign in to save changes.');return false;}
+    if(!user){
+      const current=state.transactions.find(t=>t.id===id);
+      if(!current){notify('Transaction not found.');return false;}
+      const replacement={...current,...patch,id};
+      const transactions=state.transactions.map(t=>t.id===id?replacement:t);
+      const validation=getValidationMessage(replacement,transactions);
+      if(validation){notify(validation);return false;}
+      saveGuestState({...state,transactions});
+      notify('Guest transaction updated on this device');
+      return true;
+    }
     const current=state.transactions.find(t=>t.id===id);
     if(!current){notify('Transaction not found.');return false;}
     const replacement={...current,...patch,id};
@@ -232,7 +308,13 @@ export function WalletProvider({children}){
   }
 
   async function remove(id){
-    if(!user){notify('Please sign in to save changes.');return false;}
+    if(!user){
+      const current=state.transactions.find(t=>t.id===id);
+      if(!current){notify('Transaction not found.');return false;}
+      saveGuestState({...state,transactions:state.transactions.filter(t=>t.id!==id)});
+      notify('Guest transaction removed from this device');
+      return true;
+    }
     const current=state.transactions.find(t=>t.id===id);
     if(!current){notify('Transaction not found.');return false;}
     setSaving(true);
@@ -255,7 +337,25 @@ export function WalletProvider({children}){
   }
 
   async function importTransactions(rows){
-    if(!user){notify('Please sign in to import transactions.');return {imported:0,errors:[{row:0,error:'Please sign in.'}]};}
+    if(!user){
+      const remaining=Math.max(0,GUEST_TRANSACTION_LIMIT-state.transactions.length);
+      if(!remaining){guestGate('Guest limit reached. Create a free account to import more data.');return {imported:0,errors:[]};}
+      const source=Array.isArray(rows)?rows.slice(0,remaining):[];
+      const clean=source.map((tx,i)=>({...tx,id:tx.id||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${i}`,amount:Number(tx.amount)||0,date:tx.date||todayISO()}));
+      const valid=[],errors=[];
+      const validTypes=new Set(['salary','income_other','expense','transfer','withdraw','savings_add','savings_use','etransit_add','transport','borrow','repay']);
+      for(let i=0;i<clean.length;i++){
+        const tx=clean[i];
+        if(!validTypes.has(tx.type)){errors.push({row:i+1,error:`Unknown transaction type \"${tx.type}\".`,data:tx});continue;}
+        if(!Number.isFinite(Number(tx.amount))||Number(tx.amount)<=0){errors.push({row:i+1,error:'Amount must be a positive number.',data:tx});continue;}
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(String(tx.date))){errors.push({row:i+1,error:'Date must use YYYY-MM-DD.',data:tx});continue;}
+        valid.push(tx);
+      }
+      const nextState={...state,transactions:[...state.transactions,...valid]};
+      saveGuestState(nextState);
+      if(valid.length)notify(`Imported ${valid.length} guest transaction${valid.length===1?'':'s'} on this device`);
+      return {imported:valid.length,errors};
+    }
     const clean=Array.isArray(rows)?rows.map((tx,i)=>({
       ...tx,
       id:tx.id||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`,
@@ -329,7 +429,17 @@ export function WalletProvider({children}){
   }
 
   async function addCategory(name,type='expense'){
-    if(!user){notify('Please sign in to save categories.');return false;}
+    if(!user){
+      const clean=String(name||'').trim();
+      if(!clean){notify('Enter a category name.');return false;}
+      const normalized=type==='income'?'income':'expense';
+      const exists=state.customCategories.some(c=>c.name.toLowerCase()===clean.toLowerCase()&&c.type===normalized);
+      if(exists){notify('That category already exists.');return false;}
+      const nextState={...state,customCategories:[...state.customCategories,{id:`guest-cat-${Date.now()}`,name:clean,type:normalized}]};
+      saveGuestState(nextState);
+      notify('Category saved on this device');
+      return true;
+    }
     const clean=String(name||'').trim();
     if(!clean){notify('Enter a category name.');return false;}
     const normalized=type==='income'?'income':'expense';
@@ -344,12 +454,35 @@ export function WalletProvider({children}){
     return true;
   }
 
+  useEffect(()=>{
+    if(user||!guestReady)return;
+    const handleClick=event=>{
+      const target=event.target;
+      if(!(target instanceof Element)||!target.closest('.wallet-shell'))return;
+      if(target.closest('.gate-modal')||target.closest('.wallet-toast'))return;
+      setGuestInteractions(prev=>{
+        if(prev>=GUEST_INTERACTION_LIMIT)return prev;
+        const next=prev+1;
+        writeGuestData({...state,interactionCount:next});
+        if(next===GUEST_INTERACTION_LIMIT){
+          window.dispatchEvent(new CustomEvent('wallet:guest-limit'));
+        }
+        return next;
+      });
+    };
+    window.addEventListener('click',handleClick);
+    return()=>window.removeEventListener('click',handleClick);
+  },[user,guestReady,state]);
+
   const currency=user?.user_metadata?.currency||'PKR';
+  const isGuest=!user;
+  const guestLimitReached=state.transactions.length>=GUEST_TRANSACTION_LIMIT;
+  const basePath=user?'/dashboard/expense-tracker':'/expense-tracker';
 
   const value=useMemo(()=>({
     state,user,loading,saving,toast,notify,add,update,remove,addCategory,
     addRecurring,updateRecurring,removeRecurring,
-    month,setMonth,currency,demoTransactions:DEMO_TRANSACTIONS
+    month,setMonth,currency,demoTransactions:DEMO_TRANSACTIONS,guest:isGuest,guestLimitReached,guestTransactionsUsed:state.transactions.length,guestTransactionLimit:GUEST_TRANSACTION_LIMIT,guestInteractions,guestInteractionLimit:GUEST_INTERACTION_LIMIT,basePath
   }),[state,user,loading,saving,toast,month,currency]);
 
   return <C.Provider value={value}>

@@ -1,2 +1,2 @@
-import { Transport } from '@/components/wallet/WalletPages';
-export default function Page(){return <Transport/>}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/dashboard/expense-tracker/transport');}
