@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabaseClient';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 function PasswordField({ label, value, onChange, placeholder }) {
   const [show, setShow] = useState(false);
@@ -74,52 +74,33 @@ export default function SignUpPage() {
       setError(signUpErr.message);
       return;
     }
-    if (!data.session) {
-      setNotice('Signup successful! Please check your email to verify your account before signing in.');
-    } else {
-      setNotice('Signup successful! You are now signed in.');
-    }
+    if (!data.session) setNotice('Signup successful! Please check your email to verify your account before signing in.');
+    else setNotice('Signup successful! You are now signed in.');
   }
 
   return (
     <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <form onSubmit={handleSubmit} className="card" style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-          <Image
-            src="/logo.png"
-            alt="Sultan Pocket"
-            width={64}
-            height={64}
-            priority
-            style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 16 }}
-          />
+          <Image src="/logo.png" alt="Sultan Pocket" width={64} height={64} priority style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 16 }} />
         </div>
         <h1 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>Create your account</h1>
         <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>Join Sultan Pocket, it's free</p>
+        <GoogleSignInButton />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-faint)', fontSize: 12 }}>
+          <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span>or</span>
+          <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        </div>
         {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
-        <div className="field">
-          <label>Full name</label>
-          <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your complete name" />
-        </div>
-        <div className="field">
-          <label>Username</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Pick a unique username" />
-        </div>
-        <div className="field">
-          <label>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
-        </div>
+        <div className="field"><label>Full name</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your complete name" /></div>
+        <div className="field"><label>Username</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Pick a unique username" /></div>
+        <div className="field"><label>Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></div>
         <PasswordField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" />
         <PasswordField label="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" />
         <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Creating account…' : 'Create account'}</button>
-        {notice && (
-          <p className="form-notice" style={{ display: 'block' }}>
-            {notice} <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--signal)', fontWeight: 600 }}>Open Gmail →</a>
-          </p>
-        )}
-        <p style={{ fontSize: 12.5, color: 'var(--text-faint)', textAlign: 'center', marginTop: 14 }}>
-          Already have an account? <a href="/signin" style={{ color: 'var(--signal)', fontWeight: 600 }}>Sign in</a>
-        </p>
+        {notice && <p className="form-notice" style={{ display: 'block' }}>{notice} <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--signal)', fontWeight: 600 }}>Open Gmail →</a></p>}
+        <p style={{ fontSize: 12.5, color: 'var(--text-faint)', textAlign: 'center', marginTop: 14 }}>Already have an account? <a href="/signin" style={{ color: 'var(--signal)', fontWeight: 600 }}>Sign in</a></p>
       </form>
     </main>
   );
