@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
-import FacebookSignInButton from '@/components/FacebookSignInButton';
 
 function PasswordField({ label, value, onChange, placeholder }) {
   const [show, setShow] = useState(false);
@@ -72,7 +71,6 @@ export default function SignUpPage() {
         <h1 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>Create your account</h1>
         <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>Join Sultan Pocket, it's free</p>
         <GoogleSignInButton />
-        <div style={{ margin: '10px 0' }}><FacebookSignInButton /></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-faint)', fontSize: 12 }}><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><span>or</span><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /></div>
         {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
         <div className="field"><label>Full name</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your complete name" /></div>

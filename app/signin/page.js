@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
-import FacebookSignInButton from '@/components/FacebookSignInButton';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -38,7 +37,6 @@ export default function SignInPage() {
         <h1 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>Welcome back</h1>
         <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>Sign in to Sultan Pocket</p>
         <GoogleSignInButton />
-        <div style={{ margin: '10px 0' }}><FacebookSignInButton /></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-faint)', fontSize: 12 }}><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><span>or</span><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /></div>
         {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
         <div className="field"><label>Username or email</label><input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="yourname or you@email.com" /></div>
