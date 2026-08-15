@@ -39,7 +39,7 @@ export default function SignInPage() {
         <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>Sign in to Sultan Pocket</p>
         <GoogleSignInButton />
         <div style={{ margin: '10px 0' }}><FacebookSignInButton /></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-faint)', fontSize: 12 }}><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><span>or</span><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-faint)', fontSize: 12 }}><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><span>or</span><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /></div>
         {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
         <div className="field"><label>Username or email</label><input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="yourname or you@email.com" /></div>
         <div className="field"><label>Password</label><div style={{ position: 'relative' }}><input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} style={{ paddingRight: 38 }} /><button type="button" aria-label={showPw ? 'Hide password' : 'Show password'} onClick={() => setShowPw((s) => !s)} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 14 }}>{showPw ? '🙈' : '👁'}</button></div></div>
