@@ -11,7 +11,7 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
     setError('');
     setBusy(true);
     const redirectTo = typeof window !== 'undefined'
-      ? `${window.location.origin}/auth/callback?next=/dashboard`
+      ? `${window.location.origin}/auth/callback`
       : undefined;
 
     const { error: signInErr } = await supabase.auth.signInWithOAuth({
