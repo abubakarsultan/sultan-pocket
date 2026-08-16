@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import ScrollReveal from '@/components/ScrollReveal';
+import SpotlightCard from '@/components/SpotlightCard';
 
 const FEATURES = [
   { icon: '💳', title: 'Expense tracking', desc: 'Record everyday spending across cash, online payments, and transport in one organized wallet.', href: '/expense-tracker' },
@@ -28,6 +29,7 @@ export default function HomePage() {
   return (
     <main>
       <ScrollReveal as="section" className="hero-section">
+        <div className="hero-gradient-blobs" aria-hidden="true"><span className="hero-blob hero-blob-one" /><span className="hero-blob hero-blob-two" /><span className="hero-blob hero-blob-three" /></div>
         <div className="container hero-grid">
           <div className="hero-copy">
             <div className="eyebrow"><Image src="/logo.png" alt="" width={28} height={28} /> Personal finance, made simple</div>
@@ -63,12 +65,14 @@ export default function HomePage() {
           <div className="section-heading"><span>WHAT YOU CAN DO</span><h2>Everything you need for everyday money.</h2><p>Keep your personal finances organized without turning money management into a complicated spreadsheet.</p></div>
           <div className="feature-grid">
             {FEATURES.map((feature) => (
-              <Link key={feature.title} href={feature.href} className="feature-card">
-                <span className="feature-icon">{feature.icon}</span>
-                <h3>{feature.title}</h3>
-                <p>{feature.desc}</p>
-                <span className="feature-link">Explore →</span>
-              </Link>
+              <SpotlightCard key={feature.title}>
+                <Link href={feature.href} className="feature-card">
+                  <span className="feature-icon">{feature.icon}</span>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.desc}</p>
+                  <span className="feature-link">Explore →</span>
+                </Link>
+              </SpotlightCard>
             ))}
           </div>
         </div>

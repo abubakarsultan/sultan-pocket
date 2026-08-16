@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
 import AnimatedMoney from './AnimatedNumber';
 import { supabase } from '@/lib/supabaseClient';
+import SpotlightCard from '@/components/SpotlightCard';
 
 import {
   money,
@@ -132,13 +133,14 @@ function Card({
   accent
 }) {
   return (
-    <div
-      className="wallet-card"
-      style={{
-        '--accent':
-          accent || 'var(--signal)'
-      }}
-    >
+    <SpotlightCard>
+      <div
+        className="wallet-card"
+        style={{
+          '--accent':
+            accent || 'var(--signal)'
+        }}
+      >
 
       <small>
         {label}
@@ -154,7 +156,8 @@ function Card({
         </span>
       )}
 
-    </div>
+      </div>
+    </SpotlightCard>
   );
 }
 
@@ -273,7 +276,6 @@ export function Dashboard() {
 
 
 function DashboardInner() {
-
   const {
     user,
     tx,
@@ -1107,6 +1109,74 @@ function TransactionsInner() {
    TRANSACTION TABLE
 ========================= */
 
+function SwipeTransactionCard({transaction:t,index,user,guest,currency,onViewAttachment,onEdit,onDelete}){
+  const [offset,setOffset]=useState(0);
+  const start=useRef(null);
+  const dragging=useRef(false);
+
+  function touchStart(e){
+    const touch=e.touches[0];
+    start.current={x:touch.clientX,y:touch.clientY};
+    dragging.current=false;
+  }
+  function touchMove(e){
+    if(!start.current)return;
+    const touch=e.touches[0];
+    const dx=touch.clientX-start.current.x;
+    const dy=touch.clientY-start.current.y;
+    if(!dragging.current){
+      if(Math.abs(dy)>Math.abs(dx)+8){start.current=null;return;}
+      if(Math.abs(dx)<8)return;
+      dragging.current=Math.abs(dx)>Math.abs(dy);
+    }
+    if(dragging.current){
+      e.preventDefault();
+      setOffset(Math.max(-88,Math.min(0,dx+(offset===-88? -88:0))));
+    }
+  }
+  function touchEnd(){
+    if(!start.current)return;
+    setOffset(offset < -32 ? -88 : 0);
+    start.current=null;
+    dragging.current=false;
+  }
+
+  return <div className="wallet-mobile-swipe-shell wallet-list-stagger" style={{animationDelay:`${Math.min(index,18)*40}ms`}}>
+    {(user||guest) && <button type="button" className="wallet-mobile-swipe-delete" onClick={onDelete}>🗑 Delete</button>}
+    <article
+      className={`wallet-mobile-tx wallet-mobile-swipe-content${offset===-88?' swiped':''}`}
+      style={{transform: offset!==-88 ? `translateX(${offset}px)` : undefined,transition:offset===0||offset===-88?'transform .22s cubic-bezier(.34,1.2,.64,1)':'none'}}
+      onTouchStart={touchStart}
+      onTouchMove={touchMove}
+      onTouchEnd={touchEnd}
+      onClick={() => { if(offset===-88)setOffset(0); }}
+    >
+      <div className="wallet-mobile-tx-top">
+        <span className={`wallet-pill pill-${t.type}`}>{transactionLabel(t)}</span>
+        <time>{t.date}</time>
+      </div>
+      <div className="wallet-mobile-tx-main">
+        <div>
+          <strong>
+            {t.category||t.source||t.person||t.notes||'Transaction'}
+            {t.attachment_path && <button type="button" className="attachment-button mobile-attachment-button" onClick={(e)=>{e.stopPropagation();onViewAttachment(t)}} title="View receipt" aria-label="View receipt">📎</button>}
+          </strong>
+          {t.person && <small>{t.person}</small>}
+          <small>{displayMethod(t.method||t.from)}</small>
+        </div>
+        <b className={['salary','income_other','borrow','savings_use'].includes(t.type)?'positive':'negative'}>{money(t.amount,currency)}</b>
+      </div>
+      <div className="wallet-mobile-tx-actions">
+        {user||guest ? <>
+          <button className="table-action edit" onClick={(e)=>{e.stopPropagation();onEdit()}}>Edit</button>
+          <button className="table-action delete" onClick={(e)=>{e.stopPropagation();onDelete()}}>Delete</button>
+        </> : <span className="table-locked">Read only</span>}
+      </div>
+    </article>
+  </div>;
+}
+
+
 function TxTable({
   tx,
   empty
@@ -1185,7 +1255,7 @@ function TxTable({
 
             {tx.map(t => (
 
-              <tr key={t.id}>
+              <tr key={t.id} className="wallet-list-stagger" style={{animationDelay:`${Math.min(tx.indexOf(t),18)*40}ms`}}>
 
                 <td>
                   {t.date}
@@ -1310,131 +1380,19 @@ function TxTable({
 
 
       <div className="wallet-mobile-transactions">
-
-        {tx.map(t => (
-
-          <article
-            className="wallet-mobile-tx"
+        {tx.map((t, index) => (
+          <SwipeTransactionCard
             key={`mobile-${t.id}`}
-          >
-
-            <div className="wallet-mobile-tx-top">
-
-              <span
-                className={`wallet-pill pill-${t.type}`}
-              >
-                {transactionLabel(t)}
-              </span>
-
-              <time>
-                {t.date}
-              </time>
-
-            </div>
-
-
-            <div className="wallet-mobile-tx-main">
-
-              <div>
-
-                <strong>
-                  {t.category ||
-                    t.source ||
-                    t.person ||
-                    t.notes ||
-                    'Transaction'}
-
-                  {t.attachment_path && (
-                    <button
-                      type="button"
-                      className="attachment-button mobile-attachment-button"
-                      onClick={() => viewAttachment(t)}
-                      title="View receipt"
-                      aria-label="View receipt"
-                      disabled={attachmentBusy}
-                    >
-                      📎
-                    </button>
-                  )}
-                </strong>
-
-                {t.person && (
-                  <small>
-                    {t.person}
-                  </small>
-                )}
-
-                <small>
-                  {displayMethod(
-                    t.method ||
-                    t.from
-                  )}
-                </small>
-
-              </div>
-
-
-              <b
-                className={
-                  [
-                    'salary',
-                    'income_other',
-                    'borrow',
-                    'savings_use'
-                  ].includes(t.type)
-                    ? 'positive'
-                    : 'negative'
-                }
-              >
-                {money(t.amount, currency)}
-              </b>
-
-            </div>
-
-
-            <div className="wallet-mobile-tx-actions">
-
-              {user || guest ? (
-                <>
-                  <button
-                    className="table-action edit"
-                    onClick={() =>
-                      window.dispatchEvent(
-                        new CustomEvent(
-                          'wallet:edit',
-                          {
-                            detail: t
-                          }
-                        )
-                      )
-                    }
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    className="table-action delete"
-                    onClick={() =>
-                      setConfirmId(
-                        t.id
-                      )
-                    }
-                  >
-                    Delete
-                  </button>
-                </>
-              ) : (
-                <span className="table-locked">
-                  Read only
-                </span>
-              )}
-
-            </div>
-
-          </article>
-
+            transaction={t}
+            index={index}
+            user={user}
+            guest={guest}
+            currency={currency}
+            onViewAttachment={viewAttachment}
+            onEdit={() => window.dispatchEvent(new CustomEvent('wallet:edit', {detail:t}))}
+            onDelete={() => setConfirmId(t.id)}
+          />
         ))}
-
       </div>
 
 
@@ -2510,9 +2468,10 @@ function ChartBars({
             key={x.label}
           >
 
-            <div className="chart-values">
+            <div className="chart-values" key={items.map(x => `${x.label}-${x.a}-${x.b}`).join("|")}>
 
               <i
+                className="chart-bar-fill"
                 style={{
                   height: `${Math.max(
                     4,
@@ -2529,6 +2488,7 @@ function ChartBars({
 
               {bLabel && (
                 <em
+                  className="chart-bar-fill secondary"
                   style={{
                     height: `${Math.max(
                       4,

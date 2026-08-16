@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
 import { monthLabel, shiftMonth } from '@/lib/wallet/calc';
 import { useEffect, useState } from 'react';
+import Confetti from '@/components/Confetti';
 
 const NAV_ITEMS = [
   ['', '▦', 'Dashboard'],
@@ -27,6 +28,13 @@ export default function WalletShell({
   const NAV = NAV_ITEMS.map(([suffix,ic,label])=>[`${basePath}${suffix}`,ic,label]);
   const [gate, setGate] = useState(false);
   const [gateReason, setGateReason] = useState('guest');
+  const [celebrate, setCelebrate] = useState(false);
+
+  useEffect(() => {
+    const celebrateFirst = () => setCelebrate(true);
+    window.addEventListener('wallet:first-transaction', celebrateFirst);
+    return () => window.removeEventListener('wallet:first-transaction', celebrateFirst);
+  }, []);
 
   useEffect(() => {
     const open = () => { setGateReason('guest'); setGate(true); };
@@ -51,7 +59,9 @@ export default function WalletShell({
   };
 
   return (
-    <div className="wallet-shell">
+    <>
+      <Confetti active={celebrate} onComplete={() => setCelebrate(false)} />
+      <div className="wallet-shell">
 
       {/* Sidebar */}
       <aside className="wallet-sidebar">
@@ -241,7 +251,8 @@ export default function WalletShell({
         />
       )}
 
-    </div>
+      </div>
+    </>
   );
 }
 

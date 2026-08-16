@@ -265,6 +265,9 @@ export function WalletProvider({children}){
       const validation=getValidationMessage(nextTx,[...state.transactions,nextTx]);
       if(validation){notify(validation);return false;}
       const nextState={...state,transactions:[...state.transactions,nextTx]};
+      if(state.transactions.length===0 && typeof window!=='undefined'){
+        window.dispatchEvent(new CustomEvent('wallet:first-transaction'));
+      }
       saveGuestState(nextState);
       notify(`Saved on this device · ${nextState.transactions.length}/${GUEST_TRANSACTION_LIMIT}`);
       return true;
@@ -279,6 +282,9 @@ export function WalletProvider({children}){
     setSaving(false);
     if(error){notify(error.message||'Could not save this transaction.');return false;}
     const saved=rowToTransaction(data);
+    if(state.transactions.length===0 && typeof window!=='undefined'){
+      window.dispatchEvent(new CustomEvent('wallet:first-transaction'));
+    }
     setState(prev=>({...prev,transactions:[...prev.transactions,saved]}));
     notify('Transaction saved');
     return true;
