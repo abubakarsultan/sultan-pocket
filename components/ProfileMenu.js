@@ -72,7 +72,7 @@ export default function ProfileMenu({compact=false}){
       <div className="profile-menu-links">
         <Link href={`/u/${encodeURIComponent(username)}`} onClick={()=>setOpen(false)}>Profile</Link>
         <Link href={`/u/${encodeURIComponent(username)}?edit=1`} onClick={()=>setOpen(false)}>Edit profile</Link>
-        <Link href="/dashboard/wallet" onClick={()=>setOpen(false)}>Wallet</Link>
+        <Link href="/dashboard/expense-tracker" onClick={()=>setOpen(false)}>Wallet</Link>
       </div>
       <div className="theme-picker">
         <span>Appearance</span>
