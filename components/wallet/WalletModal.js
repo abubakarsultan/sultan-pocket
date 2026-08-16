@@ -19,6 +19,8 @@ function normalizeType(t){return t==='income_other'||t==='salary'?'income':t;}
 export default function WalletModal(){
   const {user,guest,add,update,addCategory,state,notify,month,currency}=useWallet();
   const [open,setOpen]=useState(false);
+  const [closing,setClosing]=useState(false);
+  const closeTimer=useRef(null);
   const [kind,setKind]=useState('expense');
   const [editingId,setEditingId]=useState(null);
   const [form,setForm]=useState({...BASE});
@@ -30,6 +32,8 @@ export default function WalletModal(){
   const [attachmentError,setAttachmentError]=useState('');
   const [goals,setGoals]=useState([]);
   const attachmentInputRef=useRef(null);
+
+  useEffect(()=>()=>window.clearTimeout(closeTimer.current),[]);
 
   useEffect(()=>{
     if(!attachmentFile){setAttachmentPreview('');return;}
@@ -47,7 +51,7 @@ export default function WalletModal(){
     function handleAdd(e){
       if(!user&&!guest)return;
       const detail=e.detail||'expense';const nextKind=typeof detail==='string'?detail:detail.type||'expense';const preset=typeof detail==='object'?detail:{};
-      setEditingId(null);setKind(nextKind);setNewCategory('');setAttachmentFile(null);setAttachmentRemove(false);setAttachmentError('');
+      setEditingId(null);setClosing(false);setKind(nextKind);setNewCategory('');setAttachmentFile(null);setAttachmentRemove(false);setAttachmentError('');
       if(attachmentInputRef.current)attachmentInputRef.current.value='';
       const existingGoalId=preset.goal_id||preset.details?.goal_id||'';
       setForm({...BASE,...preset,type:nextKind,date:month===todayISO().slice(0,7)?todayISO():firstDayOfMonth(month),category:nextKind==='income'?'Monthly Salary':nextKind==='expense'?(preset.category||'Food'):'Food',from:nextKind==='withdraw'?'online':(preset.from||'cash'),method:nextKind==='expense'&&preset.category==='Transport'?(preset.method||'etransit'):(preset.method||'cash'),goal_id:existingGoalId});
@@ -56,7 +60,7 @@ export default function WalletModal(){
     function handleEdit(e){
       if(!user&&!guest)return;const t=e.detail;const k=normalizeType(t.type);setEditingId(t.id);setKind(k);setNewCategory('');setAttachmentFile(null);setAttachmentRemove(false);setAttachmentError('');
       if(attachmentInputRef.current)attachmentInputRef.current.value='';
-      setForm({...BASE,...t,type:k,amount:String(t.amount??''),date:t.date||todayISO(),category:t.category||(k==='income'?'Monthly Salary':'Food'),method:t.method||'cash',from:t.from||'cash',destination:t.destination||'cash',repayRequired:t.repayRequired!==false,attachment_path:t.attachment_path||'',goal_id:t.goal_id||t.details?.goal_id||''});setOpen(true);
+      setClosing(false);setForm({...BASE,...t,type:k,amount:String(t.amount??''),date:t.date||todayISO(),category:t.category||(k==='income'?'Monthly Salary':'Food'),method:t.method||'cash',from:t.from||'cash',destination:t.destination||'cash',repayRequired:t.repayRequired!==false,attachment_path:t.attachment_path||'',goal_id:t.goal_id||t.details?.goal_id||''});setOpen(true);
     }
     window.addEventListener('wallet:add',handleAdd);window.addEventListener('wallet:edit',handleEdit);return()=>{window.removeEventListener('wallet:add',handleAdd);window.removeEventListener('wallet:edit',handleEdit)};
   },[user]);
@@ -65,7 +69,17 @@ export default function WalletModal(){
   const categories=useMemo(()=>{const defaults=kind==='income'?DEFAULT_INCOME_CATEGORIES:DEFAULT_EXPENSE_CATEGORIES;const customForKind=custom.filter(c=>c.type===kind).map(c=>c.name);return [...new Set([...defaults,...customForKind])]},[custom,kind]);
   const outstandingPeople=useMemo(()=>{const tx=(state?.transactions||[]).filter(t=>t.id!==editingId);return debtSnapshot(tx)},[state,editingId]);
   if(!open)return null;
-  const setField=(f,v)=>setForm(c=>({...c,[f]:v}));const close=()=>{if(!busy){setOpen(false);setEditingId(null)}};
+  const setField=(f,v)=>setForm(c=>({...c,[f]:v}));
+  const close=()=>{
+    if(busy)return;
+    setClosing(true);
+    window.clearTimeout(closeTimer.current);
+    closeTimer.current=window.setTimeout(()=>{
+      setOpen(false);
+      setClosing(false);
+      setEditingId(null);
+    },200);
+  };
 
   function handleAttachmentChange(e){
     if(!user){setAttachmentError('Receipt uploads require an account.');e.target.value='';return}
@@ -101,11 +115,11 @@ export default function WalletModal(){
     if(!editingId&&newPath)tx.id=transactionId;
     const ok=editingId?await update(editingId,tx):await add(tx);if(!ok){if(newPath)await deleteAttachment(newPath);setBusy(false);return}
     if(editingId&&oldPath&&(newPath||attachmentRemove)){const oldError=await deleteAttachment(oldPath);if(oldError)notify('Transaction updated, but the old attachment could not be removed.')}
-    setBusy(false);if(ok){setOpen(false);setEditingId(null);setAttachmentFile(null);setAttachmentRemove(false);setAttachmentError('')}
+    setBusy(false);if(ok){close();setAttachmentFile(null);setAttachmentRemove(false);setAttachmentError('')}
   }
 
   const isExpense=kind==='expense';const isIncome=kind==='income';const isBorrow=kind==='borrow';const isRepay=kind==='repay';const isSavings=kind==='savings_add'||kind==='savings_use';const isTransfer=kind==='transfer'||kind==='withdraw';const isTransit=kind==='etransit_add';
-  return <div className="gate-backdrop"><form className="wallet-modal" onSubmit={submit}><div className="wallet-modal-head"><div><span className="wallet-modal-kicker">{editingId?'EDIT TRANSACTION':'NEW TRANSACTION'}</span><h2>{TITLES[kind]||'Transaction'}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}>×</button></div><div className="wallet-form-grid">
+  return <div className={`gate-backdrop ${closing ? "is-closing" : ""}`}><form className={`wallet-modal ${closing ? "is-closing" : ""}`} onSubmit={submit}><div className="wallet-modal-head"><div><span className="wallet-modal-kicker">{editingId?'EDIT TRANSACTION':'NEW TRANSACTION'}</span><h2>{TITLES[kind]||'Transaction'}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}>×</button></div><div className="wallet-form-grid">
     <label>Amount<input type="number" min="1" step="1" inputMode="decimal" value={form.amount} onChange={e=>setField('amount',e.target.value)} required autoFocus/></label>
     <label>Date<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)} required/></label>
     {(isExpense||isIncome)&&<><label>Category<select value={categories.includes(form.category)?form.category:''} onChange={e=>setField('category',e.target.value)} required><option value="" disabled>Select category</option>{categories.map(c=><option key={c} value={c}>{c}</option>)}</select><button type="button" className="inline-add" onClick={()=>document.getElementById('wallet-new-category')?.focus()}>+ Add category</button></label><label>Payment method<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option>{isExpense&&form.category==='Transport'&&<option value="etransit">E-Transit Wallet</option>}</select></label><label className="full category-helper">New {isIncome?'income':'expense'} category<div className="category-create"><input id="wallet-new-category" value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder={isIncome?'e.g. Freelance Income':'e.g. Medical'}/><button type="button" className="wallet-btn secondary" onClick={saveCategory}>Save category</button></div><small>This category will only appear in {isIncome?'Income':'Expense'} transactions.</small></label></>}

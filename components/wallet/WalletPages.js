@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
+import AnimatedMoney from './AnimatedNumber';
 import { supabase } from '@/lib/supabaseClient';
 
 import {
@@ -144,7 +145,7 @@ function Card({
       </small>
 
       <strong>
-        {value}
+        <AnimatedMoney value={value} />
       </strong>
 
       {sub && (

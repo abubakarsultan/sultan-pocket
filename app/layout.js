@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ThemeManager from '@/components/ThemeManager';
 import Assistant from '@/components/assistant/Assistant';
+import PageTransition from '@/components/PageTransition';
 
 export const metadata = {
   title: 'Sultan Pocket — Manage your money, your way',
@@ -22,7 +23,7 @@ export default function RootLayout({ children }) {
         <ThemeManager />
         <AuthProvider>
           <Navbar />
-          <div id="main-content">{children}</div>
+          <div id="main-content"><PageTransition>{children}</PageTransition></div>
           <Footer />
           <Assistant />
         </AuthProvider>

@@ -179,6 +179,7 @@ export function WalletProvider({children}){
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [toast,setToast]=useState('');
+  const [toastClosing,setToastClosing]=useState(false);
   const [month,setMonth]=useState(()=>new Date().toISOString().slice(0,7));
   const [user,setUser]=useState(null);
   const [guestReady,setGuestReady]=useState(false);
@@ -229,9 +230,17 @@ export function WalletProvider({children}){
   },[user]);
 
   const notify = m => {
+    setToastClosing(false);
     setToast(m);
     window.clearTimeout(window.__walletToastTimer);
-    window.__walletToastTimer = window.setTimeout(()=>setToast(''),2400);
+    window.clearTimeout(window.__walletToastExitTimer);
+    window.__walletToastTimer = window.setTimeout(()=>{
+      setToastClosing(true);
+      window.__walletToastExitTimer = window.setTimeout(()=>{
+        setToast('');
+        setToastClosing(false);
+      },180);
+    },2400);
   };
 
   function saveGuestState(nextState){
@@ -480,14 +489,14 @@ export function WalletProvider({children}){
   const basePath=user?'/dashboard/expense-tracker':'/expense-tracker';
 
   const value=useMemo(()=>({
-    state,user,loading,saving,toast,notify,add,update,remove,addCategory,
+    state,user,loading,saving,toast,toastClosing,notify,add,update,remove,addCategory,
     addRecurring,updateRecurring,removeRecurring,
     month,setMonth,currency,demoTransactions:DEMO_TRANSACTIONS,guest:isGuest,guestLimitReached,guestTransactionsUsed:state.transactions.length,guestTransactionLimit:GUEST_TRANSACTION_LIMIT,guestInteractions,guestInteractionLimit:GUEST_INTERACTION_LIMIT,basePath
-  }),[state,user,loading,saving,toast,month,currency]);
+  }),[state,user,loading,saving,toast,toastClosing,month,currency]);
 
   return <C.Provider value={value}>
     {children}
-    {toast&&<div className="wallet-toast" role="status">{toast}</div>}
+    {toast&&<div className={`wallet-toast ${toastClosing ? "is-closing" : ""}`} role="status">{toast}</div>}
   </C.Provider>;
 }
 

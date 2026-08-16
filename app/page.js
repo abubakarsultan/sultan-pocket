@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import ScrollReveal from '@/components/ScrollReveal';
 
 const FEATURES = [
   { icon: '💳', title: 'Expense tracking', desc: 'Record everyday spending across cash, online payments, and transport in one organized wallet.', href: '/expense-tracker' },
@@ -26,7 +27,7 @@ const FAQS = [
 export default function HomePage() {
   return (
     <main>
-      <section className="hero-section">
+      <ScrollReveal as="section" className="hero-section">
         <div className="container hero-grid">
           <div className="hero-copy">
             <div className="eyebrow"><Image src="/logo.png" alt="" width={28} height={28} /> Personal finance, made simple</div>
@@ -55,9 +56,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="section-block">
+      <ScrollReveal as="section" className="section-block">
         <div className="container">
           <div className="section-heading"><span>WHAT YOU CAN DO</span><h2>Everything you need for everyday money.</h2><p>Keep your personal finances organized without turning money management into a complicated spreadsheet.</p></div>
           <div className="feature-grid">
@@ -71,35 +72,35 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="section-block section-muted">
+      <ScrollReveal as="section" className="section-block section-muted">
         <div className="container">
           <div className="section-heading"><span>HOW IT WORKS</span><h2>Simple from day one.</h2><p>Start small, keep your records consistent, and let your wallet tell the story of your money.</p></div>
           <div className="steps-grid">
             {STEPS.map(([number, title, desc]) => <div className="step-card" key={number}><span>{number}</span><h3>{title}</h3><p>{desc}</p></div>)}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="section-block">
+      <ScrollReveal as="section" className="section-block">
         <div className="container split-section">
           <div><span className="section-label">BUILT FOR REAL LIFE</span><h2>Know your balance before the month knows you.</h2><p>Whether you are paying bills, receiving your monthly salary, saving for something important, or simply trying to understand your spending, Sultan Pocket gives every transaction a place.</p><Link href="/services" className="text-cta">See all features →</Link></div>
           <div className="benefit-list"><div><b>01</b><span><strong>Separate money clearly</strong><small>Cash, Online, Savings and E-Transit stay easy to understand.</small></span></div><div><b>02</b><span><strong>Record the movement</strong><small>Transfers move balances instead of pretending they are new income or expenses.</small></span></div><div><b>03</b><span><strong>Review your month</strong><small>Use your transaction history and wallet insights to make better decisions.</small></span></div></div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="section-block section-muted">
+      <ScrollReveal as="section" className="section-block section-muted">
         <div className="container">
           <div className="section-heading"><span>FAQ</span><h2>Questions, answered.</h2></div>
           <div className="faq-grid">{FAQS.map(([q, a]) => <div className="faq-card" key={q}><h3>{q}</h3><p>{a}</p></div>)}</div>
           <div className="center-link"><Link href="/faq" className="text-cta">View all FAQs →</Link></div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="final-cta">
+      <ScrollReveal as="section" className="final-cta">
         <div className="container"><Image src="/logo.png" alt="Sultan Pocket" width={52} height={52} /><h2>Ready to take control of your wallet?</h2><p>Create your free account and start tracking your money today.</p><Link href="/signup" className="btn btn-primary hero-btn">Create my account →</Link></div>
-      </section>
+      </ScrollReveal>
     </main>
   );
 }
