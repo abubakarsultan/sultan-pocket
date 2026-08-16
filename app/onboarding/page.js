@@ -139,14 +139,14 @@ export default function OnboardingPage() {
     }
   }
 
-  if (loading) return <main className="onboarding-page"><section className="onboarding-card"><p>Loading…</p></section></main>;
+  if (loading) return <main className="onboarding-page"><section className="onboarding-card onboarding-stagger"><p>Loading…</p></section></main>;
 
   const display = preview || user?.user_metadata?.avatar_url || '';
   const initial = String(name || user?.email || 'U').charAt(0).toUpperCase();
   const status = usernameStatus === 'available' ? '✓' : usernameStatus === 'taken' ? '✗' : usernameStatus === 'checking' ? '…' : '';
 
   return <main className="onboarding-page">
-    <section className="onboarding-card">
+    <section className="onboarding-card onboarding-stagger">
       <div className="onboarding-success">✓</div>
       <span className="section-label">ACCOUNT SETUP</span>
       <h1>Welcome to Sultan Pocket</h1>

@@ -568,3 +568,70 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .chart-bar-fill,.wallet-list-stagger,.balance-pulse,.confetti-particle{animation:none!important;}
   .progress-ring-value{transition:none!important;}
 }
+
+
+/* =========================================================
+   Sultan Pocket — Animation System Level 3
+   Small, functional micro-interactions; no layout-heavy motion.
+========================================================= */
+@media (prefers-reduced-motion: no-preference){
+  .dashboard-card-grid > *, .auth-form-stagger > *, .onboarding-stagger > *{
+    animation:sp-fade-up .32s ease-out both;
+  }
+  .dashboard-card-grid > *:nth-child(1), .auth-form-stagger > *:nth-child(1), .onboarding-stagger > *:nth-child(1){animation-delay:0ms}
+  .dashboard-card-grid > *:nth-child(2), .auth-form-stagger > *:nth-child(2), .onboarding-stagger > *:nth-child(2){animation-delay:45ms}
+  .dashboard-card-grid > *:nth-child(3), .auth-form-stagger > *:nth-child(3), .onboarding-stagger > *:nth-child(3){animation-delay:90ms}
+  .dashboard-card-grid > *:nth-child(4), .auth-form-stagger > *:nth-child(4), .onboarding-stagger > *:nth-child(4){animation-delay:135ms}
+  .dashboard-card-grid > *:nth-child(5), .auth-form-stagger > *:nth-child(5), .onboarding-stagger > *:nth-child(5){animation-delay:180ms}
+  .dashboard-card-grid > *:nth-child(6), .auth-form-stagger > *:nth-child(6), .onboarding-stagger > *:nth-child(6){animation-delay:225ms}
+  @keyframes sp-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Functional money-flow cues */
+  .wallet-flow-success{animation:sp-flow-pop .36s ease-out both}
+  @keyframes sp-flow-pop{0%{opacity:.35;transform:scale(.98)}60%{opacity:1;transform:scale(1.025)}100%{opacity:1;transform:scale(1)}}
+  .wallet-success-check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--success);color:#fff;font-size:12px;animation:sp-check .35s ease-out both}
+  @keyframes sp-check{from{opacity:0;transform:scale(.5) rotate(-12deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+  .wallet-delete-out{animation:sp-delete-out .24s ease-in both}
+  @keyframes sp-delete-out{to{opacity:0;transform:translateX(-16px);height:0;padding-top:0;padding-bottom:0}}
+  .wallet-loading-skeleton{background:linear-gradient(90deg,var(--surface) 0%,var(--border) 45%,var(--surface) 90%);background-size:200% 100%;animation:sp-shimmer 1.2s linear infinite;border-radius:10px}
+  @keyframes sp-shimmer{to{background-position:-200% 0}}
+  .wallet-search-result{transition:opacity .18s ease,transform .18s ease}
+  .wallet-month-transition{animation:sp-month .25s ease-out both}
+  @keyframes sp-month{from{opacity:.35;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* Mobile nav + empty state */
+  .wallet-mobile-nav a.active .nav-icon{animation:sp-nav-pop .22s ease-out both}
+  @keyframes sp-nav-pop{50%{transform:translateY(-2px) scale(1.08)}100%{transform:none}}
+  .wallet-empty-icon{animation:sp-float 2.8s ease-in-out infinite}
+  @keyframes sp-float{50%{transform:translateY(-3px)}}
+
+  /* Profile picture */
+  .profile-large-avatar{overflow:hidden}
+  .profile-large-avatar img{transition:transform .22s ease,opacity .22s ease}
+  .profile-large-avatar-wrap:hover .profile-large-avatar img{transform:scale(1.035)}
+  .profile-avatar-edit{transition:opacity .18s ease,transform .18s ease,background-color .18s ease}
+  .profile-avatar-edit:hover{transform:scale(1.05)}
+
+  /* Generic form focus + password toggle */
+  .field input:focus,.field select:focus,.field textarea:focus{transition:box-shadow .18s ease,border-color .18s ease}
+  .auth-form-stagger .btn:active,.onboarding-stagger .btn:active{transform:scale(.98)}
+}
+@media (max-width:767px){
+  .wallet-loading-skeleton{min-height:70px}
+}
+@media (prefers-reduced-motion: reduce){
+  .wallet-loading-skeleton{animation:none;background:var(--surface)}
+  .wallet-delete-out,.wallet-flow-success,.wallet-success-check,.wallet-month-transition,.wallet-empty-icon{animation:none}
+}
+
+@media (prefers-reduced-motion: no-preference){
+  .wallet-toast-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex:0 0 20px;border-radius:50%;background:var(--signal);color:#fff;font-size:11px;font-weight:800;animation:sp-check .35s ease-out both}
+}
+.wallet-toast{display:flex;align-items:center;gap:8px}
+
+@media (prefers-reduced-motion: no-preference){
+  .action-transfer:hover .action-icon,.action-withdraw:hover .action-icon{animation:sp-flow-icon .42s ease-out both}
+  @keyframes sp-flow-icon{50%{transform:translateX(3px) scale(1.08)}100%{transform:none}}
+  .wallet-action-card:active .action-icon{transform:scale(.94)}
+  .wallet-mobile-nav a,.wallet-sidebar nav a{will-change:background-color}
+}

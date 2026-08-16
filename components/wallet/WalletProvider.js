@@ -2,6 +2,7 @@
 
 import {createContext,useContext,useEffect,useMemo,useState} from 'react';
 import {usePathname} from 'next/navigation';
+import Confetti from '@/components/Confetti';
 import {supabase} from '@/lib/supabaseClient';
 import {balances,todayISO} from '@/lib/wallet/calc';
 
@@ -184,6 +185,7 @@ export function WalletProvider({children}){
   const [user,setUser]=useState(null);
   const [guestReady,setGuestReady]=useState(false);
   const [guestInteractions,setGuestInteractions]=useState(0);
+  const [firstConfetti,setFirstConfetti]=useState(false);
 
   useEffect(()=>{
     let active=true;
@@ -470,6 +472,21 @@ export function WalletProvider({children}){
   }
 
   useEffect(()=>{
+    const handler=()=>{
+      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+      setFirstConfetti(true);
+    };
+    window.addEventListener('wallet:first-transaction',handler);
+    return()=>window.removeEventListener('wallet:first-transaction',handler);
+  },[]);
+
+  useEffect(()=>{
+    if(!firstConfetti)return;
+    const timer=setTimeout(()=>setFirstConfetti(false),3100);
+    return()=>clearTimeout(timer);
+  },[firstConfetti]);
+
+  useEffect(()=>{
     if(user||!guestReady)return;
     const handleClick=event=>{
       const target=event.target;
@@ -502,7 +519,8 @@ export function WalletProvider({children}){
 
   return <C.Provider value={value}>
     {children}
-    {toast&&<div className={`wallet-toast ${toastClosing ? "is-closing" : ""}`} role="status">{toast}</div>}
+    {firstConfetti&&<Confetti active={firstConfetti} onComplete={()=>setFirstConfetti(false)}/>}
+    {toast&&<div className={`wallet-toast ${toastClosing ? "is-closing" : ""}`} role="status"><span className="wallet-toast-icon">{/(saved|added|updated|imported|created|completed|success)/i.test(toast)?'✓':'!'}</span><span>{toast}</span></div>}
   </C.Provider>;
 }
 

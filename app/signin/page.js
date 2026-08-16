@@ -32,7 +32,7 @@ export default function SignInPage() {
 
   return (
     <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <form onSubmit={handleSubmit} className="card" style={{ width: '100%', maxWidth: 380 }}>
+      <form onSubmit={handleSubmit} className="card auth-form-stagger" style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Image src="/logo.png" alt="Sultan Pocket" width={64} height={64} priority style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 16 }} /></div>
         <h1 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>Welcome back</h1>
         <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>Sign in to Sultan Pocket</p>

@@ -651,7 +651,7 @@ function MonthlySummary({transactions,month,currency}){
     ['Transport',summary.transport],
     ['Closing',summary.closing]
   ];
-  return <section className="wallet-panel monthly-summary">
+  return <section key={month} className="wallet-panel monthly-summary wallet-month-transition">
     <div className="wallet-panel-head">
       <div><span className="wallet-section-kicker">MONTHLY CLOSING SUMMARY</span><h2>{monthLabel(month)}</h2></div>
     </div>
@@ -737,9 +737,7 @@ function CategorySummary({
 
         ))
       ) : (
-        <div className="wallet-empty">
-          No data for this month.
-        </div>
+        <div className="wallet-empty"><div className="wallet-empty-icon" aria-hidden="true">💰</div><div>No data for this month.</div></div>
       )}
 
     </section>
@@ -1141,7 +1139,7 @@ function SwipeTransactionCard({transaction:t,index,user,guest,currency,onViewAtt
     dragging.current=false;
   }
 
-  return <div className="wallet-mobile-swipe-shell wallet-list-stagger" style={{animationDelay:`${Math.min(index,18)*40}ms`}}>
+  return <div data-transaction-id={String(t.id)} className="wallet-mobile-swipe-shell wallet-list-stagger" style={{animationDelay:`${Math.min(index,18)*40}ms`}}>
     {(user||guest) && <button type="button" className="wallet-mobile-swipe-delete" onClick={onDelete}>🗑 Delete</button>}
     <article
       className={`wallet-mobile-tx wallet-mobile-swipe-content${offset===-88?' swiped':''}`}
@@ -1255,7 +1253,7 @@ function TxTable({
 
             {tx.map(t => (
 
-              <tr key={t.id} className="wallet-list-stagger" style={{animationDelay:`${Math.min(tx.indexOf(t),18)*40}ms`}}>
+              <tr key={t.id} data-transaction-id={String(t.id)} className="wallet-list-stagger" style={{animationDelay:`${Math.min(tx.indexOf(t),18)*40}ms`}}>
 
                 <td>
                   {t.date}
@@ -1445,6 +1443,11 @@ function TxTable({
             setConfirmId(null)
           }
           confirm={async () => {
+            const node=document.querySelector(`[data-transaction-id="${String(confirmId).replace(/"/g,'')}"]`);
+            if(node && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+              node.classList.add('wallet-delete-out');
+              await new Promise(resolve=>setTimeout(resolve,240));
+            }
             await remove(confirmId);
             setConfirmId(null);
           }}
@@ -2552,8 +2555,20 @@ function Page({
   children
 }) {
 
-  const { user } =
+  const { user, loading } =
     useWallet();
+
+  if (loading) {
+    return (
+      <div className="wallet-page">
+        <div className="wallet-loading-skeleton" style={{height:24,width:'38%',marginBottom:18}} />
+        <div className="wallet-grid four">
+          {[1,2,3,4].map(i=><div key={i} className="wallet-loading-skeleton" style={{height:112}} />)}
+        </div>
+        <div className="wallet-loading-skeleton" style={{height:180,marginTop:16}} />
+      </div>
+    );
+  }
 
   return (
     <div className="wallet-page">
