@@ -12,13 +12,6 @@ export default function ProfileMenu({compact=false}){
   const [open,setOpen]=useState(false);
   const menuRef=useRef(null);
   const firstItemRef=useRef(null);
-  if(!user)return null;
-  const meta=user.user_metadata||{};
-  const username=meta.username||user.email?.split('@')[0]||'user';
-  const fullName=meta.full_name||username;
-  const avatar=meta.avatar_url;
-  const initials=String(fullName).split(/\s+/).filter(Boolean).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join('')||'U';
-  const itemStyle={display:'block',width:'100%',padding:'9px 10px',borderRadius:8,color:'var(--text)',fontSize:13,textDecoration:'none',textAlign:'left',background:'transparent',border:0,cursor:'pointer'};
 
   useEffect(()=>{
     if(!open)return;
@@ -28,6 +21,14 @@ export default function ProfileMenu({compact=false}){
     const timer=setTimeout(()=>firstItemRef.current?.focus(),0);
     return()=>{clearTimeout(timer);document.removeEventListener('mousedown',outside);document.removeEventListener('touchstart',outside);document.removeEventListener('keydown',escape);};
   },[open]);
+
+  if(!user)return null;
+  const meta=user.user_metadata||{};
+  const username=meta.username||user.email?.split('@')[0]||'user';
+  const fullName=meta.full_name||username;
+  const avatar=meta.avatar_url;
+  const initials=String(fullName).split(/\s+/).filter(Boolean).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join('')||'U';
+  const itemStyle={display:'block',width:'100%',padding:'9px 10px',borderRadius:8,color:'var(--text)',fontSize:13,textDecoration:'none',textAlign:'left',background:'transparent',border:0,cursor:'pointer'};
 
   async function signOut(){setOpen(false);await supabase.auth.signOut();router.push('/signin');}
   const close=()=>setOpen(false);
