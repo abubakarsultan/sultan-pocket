@@ -9,7 +9,7 @@ export default function Navbar() {
   const { user, loading } = useAuth();
 
   return (
-    <header style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 50 }}>
+    <header className="site-navbar" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 50 }}>
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <Image
