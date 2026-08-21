@@ -1,0 +1,21 @@
+/* Sultan Pocket Liquid Glass layer. Glass is reserved for floating / interactive surfaces. */
+.site-navbar{background:color-mix(in srgb,var(--porcelain) 78%,transparent)!important;border-bottom-color:color-mix(in srgb,var(--border) 72%,transparent)!important;-webkit-backdrop-filter:blur(18px) saturate(135%);backdrop-filter:blur(18px) saturate(135%);box-shadow:0 8px 30px rgba(20,20,20,.06)}
+[data-theme="dark"] .site-navbar{background:color-mix(in srgb,var(--surface) 72%,transparent)!important;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.site-navbar::after{content:'';position:absolute;inset:0 0 auto;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 72%,transparent),transparent)}
+.profile-menu-wrap>[role="menu"]{background:color-mix(in srgb,var(--surface) 74%,transparent)!important;border-color:color-mix(in srgb,var(--border) 78%,transparent)!important;box-shadow:0 24px 70px rgba(20,20,20,.16),inset 0 1px 0 rgba(255,255,255,.55)!important;-webkit-backdrop-filter:blur(24px) saturate(145%);backdrop-filter:blur(24px) saturate(145%)}
+[data-theme="dark"] .profile-menu-wrap>[role="menu"]{background:color-mix(in srgb,var(--surface) 76%,transparent)!important;box-shadow:0 24px 70px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important}
+.profile-trigger{background:color-mix(in srgb,var(--surface) 72%,transparent)!important;border-color:color-mix(in srgb,var(--border-strong) 75%,transparent)!important;-webkit-backdrop-filter:blur(14px) saturate(135%);backdrop-filter:blur(14px) saturate(135%)}
+.profile-trigger:hover,.profile-trigger[aria-expanded="true"]{border-color:color-mix(in srgb,var(--signal) 55%,var(--border))!important;box-shadow:0 8px 24px rgba(0,87,255,.10)}
+main:has(.auth-form-stagger){position:relative;min-height:calc(100vh - 110px)!important;overflow:hidden}
+main:has(.auth-form-stagger)::before,main:has(.auth-form-stagger)::after{content:'';position:absolute;border-radius:999px;pointer-events:none;filter:blur(55px);opacity:.18}
+main:has(.auth-form-stagger)::before{width:260px;height:260px;top:10%;left:8%;background:var(--signal)}
+main:has(.auth-form-stagger)::after{width:220px;height:220px;right:8%;bottom:8%;background:color-mix(in srgb,var(--signal) 35%,var(--porcelain))}
+.auth-form-stagger{position:relative;z-index:1;background:color-mix(in srgb,var(--surface) 76%,transparent)!important;border-color:color-mix(in srgb,var(--border) 74%,transparent)!important;box-shadow:0 28px 80px rgba(20,20,20,.12),inset 0 1px 0 rgba(255,255,255,.68)!important;-webkit-backdrop-filter:blur(26px) saturate(140%);backdrop-filter:blur(26px) saturate(140%)}
+[data-theme="dark"] .auth-form-stagger{background:color-mix(in srgb,var(--surface) 78%,transparent)!important;box-shadow:0 28px 80px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important}
+.auth-form-stagger .field input{background:color-mix(in srgb,var(--surface-2) 82%,transparent);border-color:color-mix(in srgb,var(--border) 82%,transparent)}
+.auth-form-stagger .field input:focus{background:var(--surface);box-shadow:0 0 0 3px color-mix(in srgb,var(--signal) 13%,transparent)}
+.auth-form-stagger .btn-primary{box-shadow:0 8px 22px rgba(0,87,255,.18)}
+.auth-form-stagger .form-error,.auth-form-stagger .form-notice{border-radius:10px;padding:9px 11px;background:color-mix(in srgb,var(--surface) 62%,transparent);border:1px solid color-mix(in srgb,currentColor 18%,var(--border))}
+@media(prefers-reduced-motion:no-preference){.site-navbar,.profile-trigger,.profile-menu-wrap>[role="menu"],.auth-form-stagger{transition:background-color .22s ease,border-color .22s ease,box-shadow .22s ease,transform .22s ease}.auth-form-stagger:hover{transform:translateY(-1px)!important}}
+@media(prefers-reduced-motion:reduce){main:has(.auth-form-stagger)::before,main:has(.auth-form-stagger)::after{display:none}}
+@media(max-width:650px){.site-navbar>.container{padding-left:14px!important;padding-right:14px!important}}

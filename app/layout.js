@@ -1,4 +1,5 @@
 import './globals.css';
+import './liquid-glass.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
