@@ -1,50 +1,149 @@
 'use client';
-import { useState } from 'react';
+
+import {useEffect,useRef,useState} from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
+import {useRouter} from 'next/navigation';
+import {supabase} from '@/lib/supabaseClient';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 
-export default function SignInPage() {
-  const router = useRouter();
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+function PasswordField({label,value,onChange,placeholder}){
+  const [show,setShow]=useState(false);
+  const id=label.toLowerCase().replace(/\s+/g,'-');
+  return <div className="field"><label htmlFor={id}>{label}</label><div style={{position:'relative'}}><input id={id} type={show?'text':'password'} value={value} onChange={onChange} placeholder={placeholder} autoComplete={label==='Password'?'new-password':'new-password'} style={{paddingRight:42}}/><button type="button" aria-label={show?'Hide password':'Show password'} onClick={()=>setShow(v=>!v)} style={{position:'absolute',right:6,top:'50%',transform:'translateY(-50%)',background:'none',border:0,color:'var(--text-faint)',fontSize:14}}>{show?'🙈':'👁'}</button></div></div>;
+}
 
-  async function handleSubmit(e) {
-    e.preventDefault(); setError('');
-    if (!identifier || !password) { setError('Please enter your username/email and password.'); return; }
+export default function SignInPage(){
+  const router=useRouter();
+  const identifierRef=useRef(null),passwordRef=useRef(null),firstNameRef=useRef(null);
+  const [step,setStep]=useState('identifier');
+  const [identifier,setIdentifier]=useState('');
+  const [resolvedEmail,setResolvedEmail]=useState('');
+  const [firstName,setFirstName]=useState(''),[lastName,setLastName]=useState(''),[username,setUsername]=useState('');
+  const [usernameStatus,setUsernameStatus]=useState('');
+  const [password,setPassword]=useState(''),[confirmPassword,setConfirmPassword]=useState('');
+  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+
+  useEffect(()=>{
+    if(step==='identifier')identifierRef.current?.focus();
+    if(step==='password')passwordRef.current?.focus();
+    if(step==='signup')firstNameRef.current?.focus();
+  },[step]);
+
+  useEffect(()=>{
+    if(step!=='signup')return;
+    const value=username.trim();
+    if(!value){setUsernameStatus('');return;}
+    if(!/^[a-zA-Z0-9_.]{3,20}$/.test(value)){setUsernameStatus('invalid');return;}
+    setUsernameStatus('checking');
+    const timer=setTimeout(async()=>{
+      const {data,error:e}=await supabase.rpc('is_username_taken',{uname:value});
+      setUsernameStatus(e?'error':data?'taken':'available');
+    },450);
+    return()=>clearTimeout(timer);
+  },[username,step]);
+
+  function back(){setStep('identifier');setError('');setNotice('');setPassword('');setConfirmPassword('');setResolvedEmail('');}
+
+  async function handleIdentifier(e){
+    e.preventDefault();setError('');setNotice('');
+    const value=identifier.trim();
+    if(!value){setError('Enter your email or username.');return;}
     setBusy(true);
-    let email = identifier;
-    if (!identifier.includes('@')) {
-      const { data: resolvedEmail, error: lookupErr } = await supabase.rpc('get_email_for_username', { uname: identifier });
-      if (lookupErr || !resolvedEmail) { setBusy(false); setError('No account found with that username.'); return; }
-      email = resolvedEmail;
-    }
-    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+    const {data,error:e}=await supabase.rpc('resolve_auth_identifier',{identifier:value});
+    if(e||!data){setBusy(false);setError('We could not check that identifier right now. Please try again.');return;}
+    if(data.registered){
+      if(data.kind==='username'){
+        const {data:email,error:lookupError}=await supabase.rpc('get_email_for_username',{uname:value});
+        if(lookupError||!email){setBusy(false);setError('We could not resolve that username. Please try again.');return;}
+        setResolvedEmail(email);
+      }else setResolvedEmail(value);
+      setStep('password');
+    }else if(data.kind==='email'){
+      setStep('signup');setFirstName('');setLastName('');setUsername('');
+    }else setStep('unregistered-username');
     setBusy(false);
-    if (signInErr) { setError(signInErr.message); return; }
+  }
+
+  async function handlePassword(e){
+    e.preventDefault();setError('');
+    if(!password){setError('Please enter your password.');return;}
+    setBusy(true);
+    const {error:e}=await supabase.auth.signInWithPassword({email:resolvedEmail,password});
+    setBusy(false);
+    if(e){setError(e.message);return;}
     router.push('/dashboard');
   }
 
-  return (
-    <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <form onSubmit={handleSubmit} className="card auth-form-stagger" style={{ width: '100%', maxWidth: 380 }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Image src="/logo.png" alt="Sultan Pocket" width={64} height={64} priority style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 16 }} /></div>
-        <h1 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>Welcome back</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>Sign in to Sultan Pocket</p>
-        <GoogleSignInButton />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-faint)', fontSize: 12 }}><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /><span>or</span><span style={{ flex: 1, height: 1, background: 'var(--border)' }} /></div>
-        {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
-        <div className="field"><label>Username or email</label><input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="yourname or you@email.com" /></div>
-        <div className="field"><label>Password</label><div style={{ position: 'relative' }}><input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} style={{ paddingRight: 38 }} /><button type="button" aria-label={showPw ? 'Hide password' : 'Show password'} onClick={() => setShowPw((s) => !s)} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 14 }}>{showPw ? '🙈' : '👁'}</button></div></div>
-        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
-        <p style={{ fontSize: 12.5, textAlign: 'right', marginTop: 8 }}><Link href="/forgot-password" style={{ color: 'var(--signal)', fontWeight: 600 }}>Forgot password?</Link></p>
-        <p style={{ fontSize: 12.5, color: 'var(--text-faint)', textAlign: 'center', marginTop: 14 }}>Don't have an account? <a href="/signup" style={{ color: 'var(--signal)', fontWeight: 600 }}>Sign up</a></p>
-      </form>
-    </main>
-  );
+  async function handleSignup(e){
+    e.preventDefault();setError('');setNotice('');
+    if(!firstName.trim()||!lastName.trim()||!username.trim()||!password||!confirmPassword){setError('Please fill in all fields.');return;}
+    if(!/^[a-zA-Z0-9_.]{3,20}$/.test(username.trim())){setError('Username should be 3-20 characters: letters, numbers, _ or . only.');return;}
+    if(usernameStatus==='taken'){setError('That username is already taken.');return;}
+    if(password.length<6){setError('Password must be at least 6 characters.');return;}
+    if(password!==confirmPassword){setError('Passwords do not match.');return;}
+    setBusy(true);
+    const {data:taken,error:checkError}=await supabase.rpc('is_username_taken',{uname:username.trim()});
+    if(checkError){setBusy(false);setError('Could not verify username right now. Please try again.');return;}
+    if(taken){setBusy(false);setUsernameStatus('taken');setError('That username is already taken.');return;}
+    const fullName=`${firstName.trim()} ${lastName.trim()}`.trim();
+    const redirectTo=typeof window!=='undefined'?`${window.location.origin}/auth/callback`:undefined;
+    const {data,error:e}=await supabase.auth.signUp({email:identifier.trim(),password,options:{data:{username:username.trim(),full_name:fullName,first_name:firstName.trim(),last_name:lastName.trim(),currency:'PKR'},...(redirectTo?{emailRedirectTo:redirectTo}:{})}});
+    setBusy(false);
+    if(e){setError(e.message);return;}
+    if(!data.session)setNotice('Account created. Please check your email to verify your account before signing in.');
+    else router.push('/dashboard');
+  }
+
+  const statusIcon=usernameStatus==='available'?'✓':usernameStatus==='taken'?'✗':usernameStatus==='checking'?'…':'';
+  return <main style={{minHeight:'70vh',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+    <section className="card auth-form-stagger" style={{width:'100%',maxWidth:400}} aria-live="polite">
+      <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Image src="/logo.png" alt="Sultan Pocket" width={64} height={64} priority style={{width:64,height:64,objectFit:'contain',borderRadius:16}}/></div>
+
+      {step==='identifier'&&<>
+        <h1 style={{fontSize:22,fontWeight:700,textAlign:'center',marginBottom:6}}>Log in or sign up</h1>
+        <p style={{fontSize:13,color:'var(--text-faint)',textAlign:'center',marginBottom:20}}>Enter your email or username to continue</p>
+        <GoogleSignInButton/>
+        <div style={{display:'flex',alignItems:'center',gap:10,margin:'16px 0',color:'var(--text-faint)',fontSize:12}}><span style={{flex:1,height:1,background:'var(--border')}}/><span>or</span><span style={{flex:1,height:1,background:'var(--border')}}/></div>
+        {error&&<div className="form-error" style={{display:'block'}} role="alert">{error}</div>}
+        <form onSubmit={handleIdentifier}>
+          <div className="field"><label htmlFor="auth-identifier">Email or username</label><input ref={identifierRef} id="auth-identifier" type="text" value={identifier} onChange={e=>setIdentifier(e.target.value)} placeholder="you@email.com or username" autoComplete="username"/></div>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy?'Checking…':'Continue'}</button>
+        </form>
+      </>}
+
+      {step==='password'&&<form onSubmit={handlePassword}>
+        <button type="button" onClick={back} style={{border:0,background:'transparent',padding:0,color:'var(--signal)',fontSize:13,cursor:'pointer',marginBottom:14}}>← Back</button>
+        <h1 style={{fontSize:21,fontWeight:700,marginBottom:6}}>Welcome back</h1>
+        <p style={{fontSize:13,color:'var(--text-faint)',marginBottom:20}}>Signing in as <strong style={{color:'var(--text)'}}>{identifier}</strong></p>
+        {error&&<div className="form-error" style={{display:'block'}} role="alert">{error}</div>}
+        <div className="field"><label htmlFor="auth-password">Password</label><input ref={passwordRef} id="auth-password" type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password"/></div>
+        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy?'Signing in…':'Log in'}</button>
+        <p style={{fontSize:12.5,textAlign:'right',marginTop:8}}><Link href="/forgot-password" style={{color:'var(--signal)',fontWeight:600}}>Forgot password?</Link></p>
+      </form>}
+
+      {step==='signup'&&<form onSubmit={handleSignup}>
+        <button type="button" onClick={back} style={{border:0,background:'transparent',padding:0,color:'var(--signal)',fontSize:13,cursor:'pointer',marginBottom:14}}>← Back</button>
+        <h1 style={{fontSize:21,fontWeight:700,marginBottom:6}}>Create your account</h1>
+        <p style={{fontSize:13,color:'var(--text-faint)',marginBottom:18}}>No account was found for <strong style={{color:'var(--text)'}}>{identifier}</strong>.</p>
+        {error&&<div className="form-error" style={{display:'block'}} role="alert">{error}</div>}
+        {notice&&<div className="form-notice" style={{display:'block'}} role="status">{notice}</div>}
+        <div className="field"><label htmlFor="first-name">First name</label><input ref={firstNameRef} id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name"/></div>
+        <div className="field"><label htmlFor="last-name">Last name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name"/></div>
+        <div className="field"><label htmlFor="new-username">Username</label><div style={{position:'relative'}}><input id="new-username" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Pick a unique username" style={{paddingRight:34}} autoComplete="username"/>{statusIcon&&<span aria-label={`Username ${usernameStatus}`} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',color:usernameStatus==='taken'?'var(--danger,#d33)':'var(--signal)',fontWeight:700}}>{statusIcon}</span>}</div></div>
+        <PasswordField label="Password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters"/>
+        <PasswordField label="Re-type password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Enter it again"/>
+        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy?'Creating account…':'Create account'}</button>
+      </form>}
+
+      {step==='unregistered-username'&&<div>
+        <button type="button" onClick={back} style={{border:0,background:'transparent',padding:0,color:'var(--signal)',fontSize:13,cursor:'pointer',marginBottom:14}}>← Back</button>
+        <h1 style={{fontSize:21,fontWeight:700,marginBottom:8}}>Username not registered</h1>
+        <p style={{fontSize:13,color:'var(--text-faint)',lineHeight:1.6,marginBottom:20}}><strong style={{color:'var(--text)'}}>@{identifier}</strong> isn’t registered. Please use your email address to create a new Sultan Pocket account.</p>
+        <button type="button" className="btn btn-primary btn-block" onClick={()=>{setIdentifier('');setStep('identifier');}}>Use my email</button>
+      </div>}
+
+      <p style={{fontSize:12.5,color:'var(--text-faint)',textAlign:'center',marginTop:16}}>Securely manage your Sultan Pocket account.</p>
+    </section>
+  </main>;
 }
