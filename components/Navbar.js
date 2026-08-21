@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from './AuthProvider';
 import ProfileMenu from './ProfileMenu';
+import ThemeToggle from './ThemeToggle';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Navbar() {
@@ -30,7 +31,8 @@ export default function Navbar() {
           <Link href="/faq">FAQ</Link>
           <Link href="/contact">Contact</Link>
         </nav>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <ThemeToggle />
           {loading ? null : user ? (
             <>
               <Link href="/dashboard" className="btn btn-ghost">Dashboard</Link>
