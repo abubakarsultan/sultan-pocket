@@ -20,94 +20,125 @@ main:has(.auth-form-stagger)::after{width:220px;height:220px;right:8%;bottom:8%;
 @media(prefers-reduced-motion:reduce){main:has(.auth-form-stagger)::before,main:has(.auth-form-stagger)::after{display:none}}
 @media(max-width:650px){.site-navbar>.container{padding-left:14px!important;padding-right:14px!important}}
 
-/* ---------- Cards: Apple-style heavy blur glass ---------- */
+/* ---------- Liquid mesh background: grayscale, always drifting ---------- */
+.liquid-bg{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;}
+.lb-blob{position:absolute;border-radius:999px;filter:blur(85px);will-change:transform;}
+.lb-1{width:420px;height:420px;top:-6%;left:-4%;background:color-mix(in srgb,var(--text) 22%,transparent);animation:lb-drift-1 22s ease-in-out infinite alternate;}
+.lb-2{width:380px;height:380px;top:40%;right:-8%;background:color-mix(in srgb,#fff 60%,transparent);animation:lb-drift-2 26s ease-in-out infinite alternate;}
+.lb-3{width:340px;height:340px;bottom:-10%;left:20%;background:color-mix(in srgb,var(--text) 16%,transparent);animation:lb-drift-3 19s ease-in-out infinite alternate;}
+.lb-4{width:300px;height:300px;bottom:10%;right:22%;background:color-mix(in srgb,#fff 45%,transparent);animation:lb-drift-4 30s ease-in-out infinite alternate;}
+[data-theme="dark"] .lb-2,[data-theme="dark"] .lb-4{background:color-mix(in srgb,var(--text) 14%,transparent);}
+@keyframes lb-drift-1{0%{transform:translate(0,0) scale(1);}100%{transform:translate(90px,60px) scale(1.2);}}
+@keyframes lb-drift-2{0%{transform:translate(0,0) scale(1);}100%{transform:translate(-70px,-50px) scale(.9);}}
+@keyframes lb-drift-3{0%{transform:translate(0,0) scale(1);}100%{transform:translate(60px,-70px) scale(1.15);}}
+@keyframes lb-drift-4{0%{transform:translate(0,0) scale(1);}100%{transform:translate(-50px,40px) scale(.95);}}
+@media(prefers-reduced-motion:reduce){.lb-blob{animation:none!important;}}
+
+/* ---------- Cards: pure frosted glass, no color tint, alive on hover ---------- */
 .card{
   position:relative;
-  background:color-mix(in srgb,var(--surface) 58%,transparent)!important;
-  border-color:color-mix(in srgb,var(--border) 65%,transparent)!important;
-  -webkit-backdrop-filter:blur(26px) saturate(170%);
-  backdrop-filter:blur(26px) saturate(170%);
-  box-shadow:0 20px 60px rgba(20,20,20,.10),inset 0 1px 0 rgba(255,255,255,.5);
+  background:color-mix(in srgb,var(--surface) 50%,transparent)!important;
+  border-color:color-mix(in srgb,var(--border) 60%,transparent)!important;
+  -webkit-backdrop-filter:blur(36px) saturate(120%);
+  backdrop-filter:blur(36px) saturate(120%);
+  box-shadow:0 24px 70px rgba(20,20,20,.10),inset 0 1px 0 rgba(255,255,255,.55);
   overflow:hidden;
+  animation:card-pulse 5s ease-in-out infinite;
 }
 .card::before{
   content:'';
   position:absolute;inset:0 0 auto;height:1px;pointer-events:none;
-  background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 65%,transparent),transparent);
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 70%,transparent),transparent);
 }
+.card::after{
+  content:'';
+  position:absolute;top:-60%;left:-70%;width:45%;height:220%;
+  background:linear-gradient(115deg,transparent,color-mix(in srgb,#fff 55%,transparent),transparent);
+  transform:rotate(18deg) translateX(-120%);
+  transition:transform .85s cubic-bezier(.22,1,.36,1);
+  pointer-events:none;
+}
+.card:hover::after{transform:rotate(18deg) translateX(280%);}
 [data-theme="dark"] .card{
-  background:color-mix(in srgb,var(--surface) 60%,transparent)!important;
-  box-shadow:0 20px 60px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.06);
+  background:color-mix(in srgb,var(--surface) 54%,transparent)!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.07);
 }
-
-/* Ambient blurred color blobs so the glass has something to refract.
-   Placed behind main content; each page's main becomes the positioning context. */
-main{position:relative;}
-main::before,main::after{
-  content:'';position:fixed;z-index:-1;border-radius:999px;pointer-events:none;
-  filter:blur(70px);opacity:.16;
+@keyframes card-pulse{
+  0%,100%{box-shadow:0 24px 70px rgba(20,20,20,.10),inset 0 1px 0 rgba(255,255,255,.55),0 0 0 rgba(255,255,255,0);}
+  50%{box-shadow:0 24px 70px rgba(20,20,20,.10),inset 0 1px 0 rgba(255,255,255,.55),0 0 34px rgba(255,255,255,.22);}
 }
-main::before{width:340px;height:340px;top:8%;left:4%;background:var(--signal);}
-main::after{width:300px;height:300px;bottom:6%;right:6%;background:color-mix(in srgb,var(--signal) 40%,var(--porcelain));}
-@media(prefers-reduced-motion:reduce){main::before,main::after{display:none}}
+[data-theme="dark"] .card{animation:card-pulse-dark 5s ease-in-out infinite;}
+@keyframes card-pulse-dark{
+  0%,100%{box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.07),0 0 0 rgba(255,255,255,0);}
+  50%{box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.07),0 0 28px rgba(255,255,255,.10);}
+}
+@media(prefers-reduced-motion:reduce){.card{animation:none!important;}.card::after{display:none;}}
 
-/* ---------- Buttons: full pill + glowing active blob ---------- */
+/* ---------- Buttons: full pill, glowing active blob + gentle pulse ---------- */
 .btn{
   position:relative;
   border-radius:999px!important;
-  background:color-mix(in srgb,var(--surface) 62%,transparent)!important;
-  border-color:color-mix(in srgb,var(--border-strong) 70%,transparent)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(150%);
-  backdrop-filter:blur(14px) saturate(150%);
+  background:color-mix(in srgb,var(--surface) 55%,transparent)!important;
+  border-color:color-mix(in srgb,var(--border-strong) 65%,transparent)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(130%);
+  backdrop-filter:blur(18px) saturate(130%);
   overflow:hidden;
   isolation:isolate;
 }
 .btn::before{
   content:'';
   position:absolute;inset:0;border-radius:inherit;z-index:-1;
-  background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--signal) 22%,transparent),transparent 70%);
+  background:radial-gradient(circle at 50% 50%,color-mix(in srgb,#fff 45%,transparent),transparent 70%);
   opacity:0;transform:scale(.6);
   transition:opacity .32s ease,transform .32s cubic-bezier(.22,1,.36,1);
 }
 .btn:hover::before,.btn:focus-visible::before{opacity:1;transform:scale(1);}
 .btn:hover,.btn:focus-visible{
-  border-color:color-mix(in srgb,var(--signal) 45%,var(--border))!important;
-  box-shadow:0 8px 24px rgba(0,87,255,.14);
+  border-color:color-mix(in srgb,var(--text) 35%,var(--border))!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.14);
   transform:translateY(-1px);
 }
 .btn-primary{
   background:linear-gradient(180deg,color-mix(in srgb,var(--signal) 92%,#fff 8%),var(--signal))!important;
   border-color:var(--signal)!important;
   color:#fff;
-  box-shadow:0 10px 26px rgba(0,87,255,.28),inset 0 1px 0 rgba(255,255,255,.35);
+  animation:btn-primary-pulse 3.2s ease-in-out infinite;
 }
-.btn-primary::before{background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.35),transparent 70%);}
+.btn-primary::before{background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.4),transparent 70%);}
 .btn-primary:hover{
   background:linear-gradient(180deg,var(--signal),var(--signal-dark))!important;
   border-color:var(--signal-dark)!important;
-  box-shadow:0 12px 30px rgba(0,87,255,.34),inset 0 1px 0 rgba(255,255,255,.35);
 }
-.btn-ghost{background:color-mix(in srgb,var(--surface) 30%,transparent)!important;border-color:transparent!important;}
-[data-theme="dark"] .btn{background:color-mix(in srgb,var(--surface) 64%,transparent)!important;}
+@keyframes btn-primary-pulse{
+  0%,100%{box-shadow:0 10px 26px rgba(0,87,255,.24),inset 0 1px 0 rgba(255,255,255,.35);}
+  50%{box-shadow:0 10px 34px rgba(0,87,255,.42),inset 0 1px 0 rgba(255,255,255,.35);}
+}
+.btn-ghost{background:color-mix(in srgb,var(--surface) 26%,transparent)!important;border-color:transparent!important;}
+[data-theme="dark"] .btn{background:color-mix(in srgb,var(--surface) 58%,transparent)!important;}
+@media(prefers-reduced-motion:reduce){.btn-primary{animation:none!important;}}
 
-/* ---------- Theme toggle: sun/moon crossfade + ripple ---------- */
+/* ---------- Theme toggle: crossfade icons + ripple + idle pulse ring ---------- */
 .theme-toggle-btn{
   position:relative;
   width:40px;height:40px;border-radius:999px;
   display:inline-flex;align-items:center;justify-content:center;
-  border:1px solid color-mix(in srgb,var(--border-strong) 75%,transparent);
-  background:color-mix(in srgb,var(--surface) 72%,transparent);
-  -webkit-backdrop-filter:blur(14px) saturate(135%);
-  backdrop-filter:blur(14px) saturate(135%);
+  border:1px solid color-mix(in srgb,var(--border-strong) 70%,transparent);
+  background:color-mix(in srgb,var(--surface) 60%,transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(120%);
+  backdrop-filter:blur(18px) saturate(120%);
   color:var(--text-dim);
   overflow:hidden;
   transition:border-color .22s ease,box-shadow .22s ease,color .22s ease;
   flex:0 0 auto;
+  animation:toggle-ring-pulse 4s ease-in-out infinite;
 }
 .theme-toggle-btn:hover{
-  border-color:color-mix(in srgb,var(--signal) 55%,var(--border));
-  box-shadow:0 8px 20px rgba(0,87,255,.12);
+  border-color:color-mix(in srgb,var(--text) 40%,var(--border));
   color:var(--text);
+}
+@keyframes toggle-ring-pulse{
+  0%,100%{box-shadow:0 0 0 rgba(255,255,255,0);}
+  50%{box-shadow:0 0 16px color-mix(in srgb,#fff 30%,transparent);}
 }
 .theme-toggle-icons{position:relative;width:20px;height:20px;}
 .theme-toggle-icons svg{
@@ -118,14 +149,21 @@ main::after{width:300px;height:300px;bottom:6%;right:6%;background:color-mix(in 
 .theme-toggle-icons svg.is-visible{opacity:1;transform:rotate(0) scale(1);}
 .theme-toggle-ripple{
   position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:999px;
-  background:color-mix(in srgb,var(--signal) 35%,transparent);
+  background:color-mix(in srgb,var(--text) 30%,transparent);
   transform:translate(-50%,-50%) scale(1);
   animation:theme-toggle-ripple .5s ease-out forwards;
   pointer-events:none;
 }
 @keyframes theme-toggle-ripple{to{transform:translate(-50%,-50%) scale(9);opacity:0;}}
 @media(prefers-reduced-motion:reduce){
+  .theme-toggle-btn{animation:none!important;}
   .theme-toggle-icons svg{transition:opacity .18s ease;transform:none!important;}
   .theme-toggle-ripple{display:none;}
   .btn::before{transition:opacity .18s ease;}
+}
+
+/* ---------- Navbar: stronger frost to match the new intensity ---------- */
+.site-navbar{
+  -webkit-backdrop-filter:blur(28px) saturate(140%)!important;
+  backdrop-filter:blur(28px) saturate(140%)!important;
 }

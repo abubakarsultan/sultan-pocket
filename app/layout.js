@@ -4,6 +4,7 @@ import { AuthProvider } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ThemeManager from '@/components/ThemeManager';
+import LiquidBackground from '@/components/LiquidBackground';
 import Assistant from '@/components/assistant/Assistant';
 import PageTransition from '@/components/PageTransition';
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
       <body>
         <a href="#main-content" className="skip-link">Skip to content</a>
         <ThemeManager />
+        <LiquidBackground />
         <AuthProvider>
           <Navbar />
           <div id="main-content"><PageTransition>{children}</PageTransition></div>
