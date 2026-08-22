@@ -15,5 +15,12 @@
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/screenshot-home-light.png", "sizes": "1280x719", "type": "image/png", "form_factor": "wide", "label": "Home page — wallet overview, light mode" },
+    { "src": "/screenshots/screenshot-home-dark.png", "sizes": "1280x719", "type": "image/png", "form_factor": "wide", "label": "Home page — wallet overview, dark mode" },
+    { "src": "/screenshots/screenshot-dashboard.png", "sizes": "1280x719", "type": "image/png", "form_factor": "wide", "label": "Wallet dashboard — quick actions and balances" },
+    { "src": "/screenshots/screenshot-goals.png", "sizes": "1280x719", "type": "image/png", "form_factor": "wide", "label": "Savings goals" },
+    { "src": "/screenshots/screenshot-mobile-home.jpeg", "sizes": "720x1439", "type": "image/jpeg", "form_factor": "narrow", "label": "Sultan Pocket on mobile" }
   ]
 }
