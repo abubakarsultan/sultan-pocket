@@ -25,11 +25,11 @@ export default function Navbar() {
         </Link>
         <nav aria-label="Primary navigation" style={{ display: 'flex', gap: 22, fontSize: 13.5, color: 'var(--text-dim)' }} className="nav-links">
           <Link href="/">Home</Link>
-          <Link href="/services">Features</Link>
-          <Link href="/about">About</Link>
-          <Link href="/blog">Blog</Link>
-          <Link href="/faq">FAQ</Link>
-          <Link href="/contact">Contact</Link>
+          <Link href="/services" prefetch={false}>Features</Link>
+          <Link href="/about" prefetch={false}>About</Link>
+          <Link href="/blog" prefetch={false}>Blog</Link>
+          <Link href="/faq" prefetch={false}>FAQ</Link>
+          <Link href="/contact" prefetch={false}>Contact</Link>
         </nav>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <ThemeToggle />

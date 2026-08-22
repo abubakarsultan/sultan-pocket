@@ -9,13 +9,13 @@ export default function Footer() {
           <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>Created by Abubakar Sultan</span>
         </div>
         <nav aria-label="Footer navigation" style={{ display: 'flex', gap: 18, fontSize: 13, color: 'var(--text-dim)' }}>
-          <Link href="/services">Features</Link>
-          <Link href="/about">About</Link>
-          <Link href="/blog">Blog</Link>
-          <Link href="/faq">FAQ</Link>
-          <Link href="/contact">Contact</Link>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
+          <Link href="/services" prefetch={false}>Features</Link>
+          <Link href="/about" prefetch={false}>About</Link>
+          <Link href="/blog" prefetch={false}>Blog</Link>
+          <Link href="/faq" prefetch={false}>FAQ</Link>
+          <Link href="/contact" prefetch={false}>Contact</Link>
+          <Link href="/privacy" prefetch={false}>Privacy</Link>
+          <Link href="/terms" prefetch={false}>Terms</Link>
         </nav>
       </div>
     </footer>

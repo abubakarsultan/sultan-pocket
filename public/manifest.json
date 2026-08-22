@@ -6,6 +6,8 @@
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "prefer_related_applications": false,
   "orientation": "portrait-primary",
   "background_color": "#F8F7F4",
   "theme_color": "#0057FF",
