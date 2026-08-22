@@ -1,0 +1,73 @@
+SULTAN POCKET — GOOGLE PLAY STORE LISTING
+==========================================
+
+APP TITLE (max 30 chars)
+-------------------------
+Sultan Pocket: Budget Tracker
+
+SHORT DESCRIPTION (max 80 chars)
+---------------------------------
+Track expenses, plan budgets, and grow savings — all in one place.
+
+FULL DESCRIPTION (max 4000 chars)
+-----------------------------------
+Sultan Pocket is your all-in-one personal finance companion — built to help
+you understand where your money goes and take control of it, without the
+clutter of a traditional banking app.
+
+TRACK EVERY RUPEE
+Log income and expenses in seconds. See your balance update instantly, sort
+by category, and export your transaction history to CSV whenever you need it.
+
+BUDGET PLANNER
+Set spending limits for each category and see exactly how you're tracking
+against them in real time — before you overspend, not after.
+
+SAVINGS GOALS
+Set a target amount and a deadline for anything you're saving toward, and
+watch your progress grow with every contribution.
+
+BILL & SUBSCRIPTION REMINDERS
+Never miss a due date again. Keep every recurring bill and subscription in
+one place with clear reminders.
+
+BUILT-IN AI ASSISTANT
+Ask Sultan Pocket's assistant to add a transaction, check your balance, or
+summarize your spending — in plain language.
+
+PRIVATE & SECURE
+Your data is tied to your account and protected with row-level security —
+nobody else can see your numbers.
+
+WORKS OFFLINE
+Sultan Pocket is a installable app that keeps working even with a patchy
+connection, and syncs the moment you're back online.
+
+Whether you're managing a monthly salary, a side hustle, or your household
+budget, Sultan Pocket gives you a clear, honest picture of your money —
+your way.
+
+CATEGORY
+---------
+Finance
+
+CONTENT RATING
+----------------
+Fill via Play Console's IARC questionnaire (Everyone / PEGI 3 expected —
+no violence, gambling, or mature content in this app).
+
+PRIVACY POLICY URL
+---------------------
+https://sultanpocket.online/privacy
+
+CONTACT EMAIL
+---------------
+(use the same inbox as your /contact page's CONTACT_RECEIVER_EMAIL)
+
+DATA SAFETY FORM — WHAT TO DECLARE
+--------------------------------------
+Data collected: Email address, Name, Financial info (transactions you enter)
+Purpose: Account functionality, app functionality
+Encrypted in transit: Yes (Supabase/HTTPS)
+Data deletion: Yes — app has an in-app "Delete account" option
+Shared with third parties: No
