@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "REPLACE_WITH_YOUR_ANDROID_PACKAGE_NAME",
+      "package_name": "online.sultanpocket.twa",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_SHA256_FINGERPRINT_FROM_BUBBLEWRAP_OR_PLAY_APP_SIGNING"
+        "CB:C6:7B:5F:10:C2:10:F4:BF:CF:5F:6C:32:70:4C:04:E7:EC:53:9F:0F:83:A0:B7:62:2A:10:3F:2F:1D:B1:66"
       ]
     }
   }
