@@ -1,8 +1,21 @@
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(request) {
   try {
+    const rl = rateLimit(request, { limit: 5, windowMs: 60_000, keyPrefix: 'contact' });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
+
     const { name, email, subject, message } = await request.json();
     if (!name || !email || !subject || !message) {
       return Response.json({ error: 'All fields are required.' }, { status: 400 });
+    }
+    if (!EMAIL_RE.test(String(email).trim())) {
+      return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+    }
+    if (String(message).length > 5000) {
+      return Response.json({ error: 'Message is too long.' }, { status: 400 });
     }
 
     const res = await fetch('https://api.resend.com/emails', {

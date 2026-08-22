@@ -1,0 +1,13 @@
+{
+  "name": "Sultan Pocket — Manage your money, your way",
+  "short_name": "Sultan Pocket",
+  "description": "Track expenses, plan budgets, and grow savings — all your personal finance tools in one place.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F8F7F4",
+  "theme_color": "#0057FF",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

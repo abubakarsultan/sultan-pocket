@@ -12,9 +12,17 @@ export const metadata = {
   title: 'Sultan Pocket — Manage your money, your way',
   description: 'Sultan Pocket helps you track expenses, plan budgets, and grow savings — all your personal finance tools in one place.',
   metadataBase: new URL('https://sultanpocket.online'),
+  manifest: '/manifest.json',
   icons: { icon: '/favicon.ico', shortcut: '/favicon.ico', apple: '/favicon.ico' },
   robots: { index: true, follow: true },
   openGraph: { title: 'Sultan Pocket', description: 'Track expenses, plan budgets, and grow savings — all in one place.', url: 'https://sultanpocket.online', siteName: 'Sultan Pocket', type: 'website' },
+};
+
+export const viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F8F7F4' },
+    { media: '(prefers-color-scheme: dark)', color: '#141414' },
+  ],
 };
 
 export default function RootLayout({ children }) {

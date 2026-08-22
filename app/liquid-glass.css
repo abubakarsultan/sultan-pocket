@@ -167,3 +167,14 @@ main:has(.auth-form-stagger)::after{width:220px;height:220px;right:8%;bottom:8%;
   -webkit-backdrop-filter:blur(28px) saturate(140%)!important;
   backdrop-filter:blur(28px) saturate(140%)!important;
 }
+
+/* ---------- Root loading spinner ---------- */
+.loading-spinner{display:flex;align-items:center;justify-content:center;}
+.loading-spinner-ring{
+  width:36px;height:36px;border-radius:999px;
+  border:3px solid color-mix(in srgb,var(--border-strong) 60%,transparent);
+  border-top-color:var(--signal);
+  animation:loading-spin .7s linear infinite;
+}
+@keyframes loading-spin{to{transform:rotate(360deg);}}
+@media(prefers-reduced-motion:reduce){.loading-spinner-ring{animation:none;border-top-color:var(--border-strong);}}
