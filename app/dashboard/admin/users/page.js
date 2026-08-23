@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
     try {
       await authedFetch('/api/admin/invite', {
         method: 'POST',
-        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole, origin: window.location.origin }),
       });
       setNotice(`Invite sent to ${inviteEmail.trim()}.`);
       setInviteEmail(''); setInviteRole('user');

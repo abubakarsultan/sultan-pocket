@@ -13,6 +13,24 @@ function CallbackContent() {
     let active = true;
 
     async function finish() {
+      // Supabase sends failures (expired/already-used links, etc.) as hash
+      // params rather than a query string: #error=...&error_code=otp_expired
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const hashError = hashParams.get('error');
+        if (hashError) {
+          const code = hashParams.get('error_code');
+          if (active) {
+            setError(
+              code === 'otp_expired'
+                ? "This link has expired or was already used. This can happen if it sat unopened for a while, or if your email app 'previewed' the link automatically. Ask whoever sent it to send a new one, or use 'Forgot password' to get a fresh link yourself."
+                : hashParams.get('error_description')?.replace(/\+/g, ' ') || 'This link is no longer valid.'
+            );
+          }
+          return;
+        }
+      }
+
       const code = params.get('code');
 
       if (code) {

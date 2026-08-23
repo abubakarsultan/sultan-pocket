@@ -84,7 +84,6 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
-
   useEffect(() => {
     if (step === 'identifier') identifierRef.current?.focus();
     if (step === 'password') passwordRef.current?.focus();
@@ -148,24 +147,24 @@ export default function SignInPage() {
     }
 
     if (data.registered) {
+      let email = value;
       if (data.kind === 'username') {
-        const { data: email, error: lookupError } = await supabase.rpc(
+        const { data: lookedUpEmail, error: lookupError } = await supabase.rpc(
           'get_email_for_username',
           { uname: value },
         );
 
-        if (lookupError || !email) {
+        if (lookupError || !lookedUpEmail) {
           setBusy(false);
           setError('We could not resolve that username. Please try again.');
           return;
         }
 
-        setResolvedEmail(email);
-      } else {
-        setResolvedEmail(value);
+        email = lookedUpEmail;
       }
 
-      setStep('password');
+      setResolvedEmail(email);
+      setStep(data.has_password ? 'password' : 'set-password');
     } else if (data.kind === 'email') {
       setFirstName('');
       setLastName('');
@@ -203,6 +202,23 @@ export default function SignInPage() {
     }
 
     router.push('/dashboard');
+  }
+
+  async function handleSendSetPasswordLink() {
+    setError(''); setNotice('');
+    setBusy(true);
+    const redirectTo = typeof window !== 'undefined'
+      ? `${window.location.origin}/reset-password`
+      : undefined;
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resolvedEmail, {
+      ...(redirectTo ? { redirectTo } : {}),
+    });
+    setBusy(false);
+    if (resetErr) {
+      setError(resetErr.message);
+      return;
+    }
+    setNotice(`We've emailed a link to ${resolvedEmail} to set up your password.`);
   }
 
   async function handleSignup(event) {
@@ -412,6 +428,43 @@ export default function SignInPage() {
               </Link>
             </p>
           </form>
+        ) : null}
+
+        {step === 'set-password' ? (
+          <div>
+            <BackButton onClick={backToIdentifier} />
+            <h1 style={{ fontSize: 21, fontWeight: 700, marginBottom: 6 }}>Almost there</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 20 }}>
+              <strong style={{ color: 'var(--text)' }}>{resolvedEmail}</strong> is registered, but doesn't have a
+              password set yet — likely because it was created with Google or an invite that wasn't finished.
+            </p>
+
+            {error ? (
+              <div className="form-error" style={{ display: 'block' }} role="alert">
+                {error}
+              </div>
+            ) : null}
+            {notice ? (
+              <div className="form-notice" style={{ display: 'block' }} role="status">
+                {notice}
+              </div>
+            ) : null}
+
+            <GoogleSignInButton label="Continue with Google" />
+
+            <div
+              aria-hidden="true"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-faint)', fontSize: 12 }}
+            >
+              <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span>or</span>
+              <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
+
+            <button type="button" className="btn btn-primary btn-block" onClick={handleSendSetPasswordLink} disabled={busy}>
+              {busy ? 'Sending…' : 'Email me a link to set a password'}
+            </button>
+          </div>
         ) : null}
 
         {step === 'signup' ? (

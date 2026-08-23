@@ -9,18 +9,22 @@ export async function POST(request) {
     return NextResponse.json({ error: check.error }, { status: check.status });
   }
 
-  const { email, role } = await request.json().catch(() => ({}));
+  const { email, role, origin } = await request.json().catch(() => ({}));
   if (!email || typeof email !== 'string') {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 });
   }
   const finalRole = ['user', 'editor', 'admin'].includes(role) ? role : 'user';
 
   const admin = supabaseAdmin();
+  const siteOrigin = origin || request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || '';
+  const redirectTo = `${siteOrigin}/auth/callback`;
 
   // Sends the user a Supabase invite email; they set their own password by
   // following the link. Their profiles row is created automatically by the
   // on_auth_user_created trigger (see 09_admin_roles.sql).
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email.trim().toLowerCase());
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(email.trim().toLowerCase(), {
+    redirectTo,
+  });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

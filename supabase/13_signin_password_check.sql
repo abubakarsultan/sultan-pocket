@@ -1,12 +1,9 @@
--- Auth identifier lookup for the unified sign-in/sign-up flow.
--- This intentionally returns only whether an identifier is registered, its
--- kind, and whether a password has ever been set for it — it does not
--- expose another user's email address.
---
--- has_password is false for accounts that only ever signed in with Google,
--- or that were invited by an admin but haven't followed the invite link
--- and set a password yet. The sign-in page uses this to avoid showing a
--- confusing "wrong password" for an account that never had one.
+-- 13_signin_password_check.sql
+-- Adds has_password to resolve_auth_identifier() so the sign-in page can
+-- tell the difference between "wrong password" and "this account never had
+-- a password set" (Google-only accounts, or an invite that hasn't been
+-- completed yet). Safe to re-run. Same function as in 07_auth_identifier.sql,
+-- provided here separately so it can be applied on its own.
 
 create or replace function public.resolve_auth_identifier(identifier text)
 returns jsonb
