@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
+import MarkdownEditor from '@/components/admin/MarkdownEditor';
 
 function slugify(text) {
   return text
@@ -157,11 +158,9 @@ export default function AdminBlogPage() {
         </div>
         <div className="field">
           <label>Content</label>
-          <textarea
+          <MarkdownEditor
             value={form.content}
-            onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-            rows={10}
-            style={{ width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, color: 'var(--text)', resize: 'vertical' }}
+            onChange={(content) => setForm((f) => ({ ...f, content }))}
           />
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 16 }}>

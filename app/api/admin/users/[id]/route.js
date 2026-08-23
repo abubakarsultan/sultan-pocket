@@ -13,7 +13,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: check.error }, { status: check.status });
   }
 
-  const targetId = params.id;
+  const { id: targetId } = await params;
   if (targetId === check.user.id) {
     return NextResponse.json({ error: 'You cannot change your own role or status' }, { status: 400 });
   }
@@ -57,7 +57,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: check.error }, { status: check.status });
   }
 
-  const targetId = params.id;
+  const { id: targetId } = await params;
   if (targetId === check.user.id) {
     return NextResponse.json({ error: 'You cannot delete your own account here' }, { status: 400 });
   }

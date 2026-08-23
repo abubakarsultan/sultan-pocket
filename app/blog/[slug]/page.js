@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
+import { marked } from 'marked';
+
+marked.setOptions({ breaks: true });
 
 export const revalidate = 30;
 
@@ -19,7 +22,8 @@ async function getPost(slug) {
 }
 
 export async function generateMetadata({ params }) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
   if (!post) return { title: 'Post not found — Sultan Pocket' };
   const title = post.meta_title || post.title;
   const description = post.meta_description || post.excerpt || undefined;
@@ -31,7 +35,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
   if (!post) notFound();
 
   return (
@@ -43,9 +48,11 @@ export default async function BlogPostPage({ params }) {
       {post.cover_image_url && (
         <img src={post.cover_image_url} alt={post.title} style={{ width: '100%', borderRadius: 12, marginBottom: 24 }} />
       )}
-      <div style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>
-        {post.content}
-      </div>
+      <div
+        className="blog-content"
+        style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--text)' }}
+        dangerouslySetInnerHTML={{ __html: marked.parse(post.content || '') }}
+      />
     </main>
   );
 }
