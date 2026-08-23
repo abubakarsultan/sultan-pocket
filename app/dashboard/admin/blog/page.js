@@ -13,12 +13,12 @@ function slugify(text) {
     .replace(/-+/g, '-');
 }
 
-const emptyForm = { id: null, title: '', slug: '', excerpt: '', content: '', cover_image_url: '', published: false };
+const emptyForm = { id: null, title: '', slug: '', excerpt: '', content: '', cover_image_url: '', meta_title: '', meta_description: '', published: false };
 
 export default function AdminBlogPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(null); // "isAdmin" here really means "has editor/admin access"
   const [posts, setPosts] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
@@ -33,7 +33,7 @@ export default function AdminBlogPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) { router.replace('/signin'); return; }
-    supabase.rpc('am_i_admin').then(({ data }) => {
+    supabase.rpc('is_editor_or_admin').then(({ data }) => {
       setIsAdmin(!!data);
       if (data) loadPosts();
     });
@@ -69,6 +69,8 @@ export default function AdminBlogPage() {
       excerpt: form.excerpt,
       content: form.content,
       cover_image_url: form.cover_image_url,
+      meta_title: form.meta_title,
+      meta_description: form.meta_description,
       published: form.published,
       updated_at: new Date().toISOString(),
     };
@@ -144,6 +146,14 @@ export default function AdminBlogPage() {
         <div className="field">
           <label>Cover image URL (optional)</label>
           <input type="text" value={form.cover_image_url || ''} onChange={(e) => setForm((f) => ({ ...f, cover_image_url: e.target.value }))} />
+        </div>
+        <div className="field">
+          <label>SEO title (optional — falls back to the post title)</label>
+          <input type="text" value={form.meta_title || ''} onChange={(e) => setForm((f) => ({ ...f, meta_title: e.target.value }))} />
+        </div>
+        <div className="field">
+          <label>SEO description (optional — falls back to the excerpt)</label>
+          <input type="text" value={form.meta_description || ''} onChange={(e) => setForm((f) => ({ ...f, meta_description: e.target.value }))} />
         </div>
         <div className="field">
           <label>Content</label>

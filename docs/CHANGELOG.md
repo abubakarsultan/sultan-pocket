@@ -3,6 +3,16 @@
 Consolidated from the individual phase/setup notes that used to live in this
 folder as separate files. Newest first.
 
+## Admin dashboard
+
+- Role-based access control: `profiles` table with `role` (user/editor/admin) and `status` (active/suspended), backed by RLS and security-definer helper functions (`is_admin()`, `is_editor_or_admin()`)
+- New `/dashboard/admin` section: overview, Users, Blog, SEO — gated by role, with its own sidebar shell
+- Users page: invite by email (Supabase invite flow), change role, suspend/reinstate (bans the Auth account too, not just a flag), delete account
+- Server-only admin API routes (`app/api/admin/*`) using the Supabase service role key, each independently re-checking the caller is an admin
+- Blog editor extended with per-post SEO title/description, now used on the public post page's metadata
+- New SEO settings page backed by a `site_settings` table (site-wide title/description/social image) — not yet wired into the root layout's metadata, see `docs/ADMIN_DASHBOARD.md`
+- See `docs/ADMIN_DASHBOARD.md` for the one-time setup steps (run the new SQL files, add the service role key, bootstrap the first admin)
+
 ## Wallet — final pass
 
 Consolidated Wallet implementation, now living under `/dashboard/expense-tracker`:

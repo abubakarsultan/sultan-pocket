@@ -21,7 +21,7 @@ components/     Reusable UI components
 lib/            Shared helper code (Supabase client, wallet calculations, rate limiting)
 supabase/       Database schema — numbered SQL files, run in order (see supabase/README.md)
 public/         Static assets, PWA manifest, service worker, icons
-docs/           Setup notes and project history (see docs/CHANGELOG.md)
+docs/           Setup notes and project history (see docs/CHANGELOG.md, docs/ADMIN_DASHBOARD.md)
 play-store-assets/  Assets and listing copy for the Play Store (Android/TWA) submission
 ```
 

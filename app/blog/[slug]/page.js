@@ -11,7 +11,7 @@ async function getPost(slug) {
   const supabase = getClient();
   const { data } = await supabase
     .from('posts')
-    .select('title,excerpt,content,cover_image_url,created_at,published')
+    .select('title,excerpt,content,cover_image_url,created_at,published,meta_title,meta_description')
     .eq('slug', slug)
     .eq('published', true)
     .maybeSingle();
@@ -21,10 +21,12 @@ async function getPost(slug) {
 export async function generateMetadata({ params }) {
   const post = await getPost(params.slug);
   if (!post) return { title: 'Post not found — Sultan Pocket' };
+  const title = post.meta_title || post.title;
+  const description = post.meta_description || post.excerpt || undefined;
   return {
-    title: `${post.title} — Sultan Pocket`,
-    description: post.excerpt || undefined,
-    openGraph: { title: post.title, description: post.excerpt || undefined },
+    title: `${title} — Sultan Pocket`,
+    description,
+    openGraph: { title, description },
   };
 }
 
