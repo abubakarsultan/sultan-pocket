@@ -1,10 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
 
 const ROLES = ['user', 'editor', 'admin'];
+const PAGE_SIZE = 25;
+
+const ACTION_LABEL = {
+  invite_user: 'invited',
+  change_role: 'changed role for',
+  suspend_user: 'suspended',
+  reinstate_user: 'reinstated',
+  delete_user: 'deleted',
+};
 
 async function authedFetch(url, options = {}) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -31,6 +40,12 @@ export default function AdminUsersPage() {
   const [inviting, setInviting] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmRole, setConfirmRole] = useState(null); // { user, newRole }
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [activity, setActivity] = useState(null);
 
   const loadUsers = useCallback(async () => {
     const { data, error } = await supabase.rpc('admin_list_users');
@@ -38,7 +53,31 @@ export default function AdminUsersPage() {
     else setUsers(data || []);
   }, []);
 
-  useEffect(() => { loadUsers(); }, [loadUsers]);
+  const loadActivity = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('admin_audit_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (!error) setActivity(data || []);
+  }, []);
+
+  useEffect(() => { loadUsers(); loadActivity(); }, [loadUsers, loadActivity]);
+
+  const filtered = useMemo(() => {
+    if (!users) return [];
+    return users.filter((u) => {
+      if (search.trim() && !u.email.toLowerCase().includes(search.trim().toLowerCase())) return false;
+      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (statusFilter !== 'all' && u.status !== statusFilter) return false;
+      return true;
+    });
+  }, [users, search, roleFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageSlice = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search, roleFilter, statusFilter]);
 
   async function handleInvite(e) {
     e.preventDefault();
@@ -52,7 +91,7 @@ export default function AdminUsersPage() {
       });
       setNotice(`Invite sent to ${inviteEmail.trim()}.`);
       setInviteEmail(''); setInviteRole('user');
-      loadUsers();
+      loadUsers(); loadActivity();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -60,11 +99,12 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleRoleChange(id, role) {
-    setBusyId(id); setError('');
+  async function applyRoleChange(target, role) {
+    setBusyId(target.id); setError('');
     try {
-      await authedFetch(`/api/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify({ role }) });
-      loadUsers();
+      await authedFetch(`/api/admin/users/${target.id}`, { method: 'PATCH', body: JSON.stringify({ role }) });
+      setConfirmRole(null);
+      loadUsers(); loadActivity();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -72,12 +112,19 @@ export default function AdminUsersPage() {
     }
   }
 
+  function handleRoleSelect(target, newRole) {
+    if (newRole === target.role) return;
+    // Always confirm — promoting to admin is high-risk, but a mistaken
+    // demotion/change is just as easy to do by accident from a dropdown.
+    setConfirmRole({ user: target, newRole });
+  }
+
   async function handleStatusToggle(id, currentStatus) {
     const nextStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
     setBusyId(id); setError('');
     try {
       await authedFetch(`/api/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify({ status: nextStatus }) });
-      loadUsers();
+      loadUsers(); loadActivity();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -90,7 +137,7 @@ export default function AdminUsersPage() {
     try {
       await authedFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
       setConfirmDelete(null);
-      loadUsers();
+      loadUsers(); loadActivity();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -127,8 +174,28 @@ export default function AdminUsersPage() {
       <div className="wallet-panel">
         <div className="wallet-panel-head">
           <h2>All users</h2>
-          <span>{users?.length ?? '…'} total</span>
+          <span>{filtered.length} of {users?.length ?? '…'} total</span>
         </div>
+
+        <div className="wallet-panel-tools" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
+          <input
+            type="search"
+            placeholder="Search by email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ flex: '1 1 200px', minWidth: 160, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 9, padding: '8px 11px', fontSize: 12.5, color: 'var(--text)' }}
+          />
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+            <option value="all">All roles</option>
+            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">All statuses</option>
+            <option value="active">active</option>
+            <option value="suspended">suspended</option>
+          </select>
+        </div>
+
         <div className="wallet-table-wrap">
           <table className="wallet-table">
             <thead>
@@ -145,10 +212,13 @@ export default function AdminUsersPage() {
               {users === null && (
                 <tr><td colSpan={6} className="wallet-empty">Loading…</td></tr>
               )}
+              {users?.length > 0 && filtered.length === 0 && (
+                <tr><td colSpan={6} className="wallet-empty">No users match your search/filters.</td></tr>
+              )}
               {users?.length === 0 && (
                 <tr><td colSpan={6} className="wallet-empty">No users yet.</td></tr>
               )}
-              {users?.map((u) => {
+              {pageSlice.map((u) => {
                 const isSelf = u.id === user?.id;
                 return (
                   <tr key={u.id}>
@@ -157,7 +227,7 @@ export default function AdminUsersPage() {
                       <select
                         value={u.role}
                         disabled={isSelf || busyId === u.id}
-                        onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                        onChange={(e) => handleRoleSelect(u, e.target.value)}
                       >
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
@@ -191,6 +261,36 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 14, fontSize: 12.5 }}>
+            <button className="wallet-btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Previous</button>
+            <span style={{ color: 'var(--text-faint)' }}>Page {page} of {totalPages}</span>
+            <button className="wallet-btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next →</button>
+          </div>
+        )}
+      </div>
+
+      <div className="wallet-panel" style={{ marginTop: 15 }}>
+        <div className="wallet-panel-head">
+          <h2>Recent activity</h2>
+        </div>
+        {activity === null && <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Loading…</p>}
+        {activity?.length === 0 && <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>No activity yet.</p>}
+        {activity && activity.length > 0 && (
+          <div className="metric-list">
+            {activity.map((a) => (
+              <div key={a.id}>
+                <span>
+                  <b style={{ color: 'var(--text)' }}>{a.actor_email || 'Someone'}</b> {ACTION_LABEL[a.action] || a.action}
+                  {a.target_email ? <> <b style={{ color: 'var(--text)' }}>{a.target_email}</b></> : null}
+                  {a.details?.new_role ? <> → {a.details.new_role}</> : null}
+                </span>
+                <b style={{ fontWeight: 500, color: 'var(--text-faint)' }}>{new Date(a.created_at).toLocaleString()}</b>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {confirmDelete && (
@@ -203,6 +303,30 @@ export default function AdminUsersPage() {
               <button className="wallet-btn" onClick={() => setConfirmDelete(null)}>Cancel</button>
               <button className="wallet-btn danger-fill" onClick={() => handleDelete(confirmDelete.id)}>
                 Delete account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmRole && (
+        <div className="gate-backdrop" onClick={() => setConfirmRole(null)}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-icon">!</div>
+            <h2>
+              {confirmRole.newRole === 'admin'
+                ? `Make ${confirmRole.user.email} an admin?`
+                : `Change ${confirmRole.user.email}'s role to ${confirmRole.newRole}?`}
+            </h2>
+            <p>
+              {confirmRole.newRole === 'admin'
+                ? 'They will get full access to the admin panel, including inviting, suspending, and deleting other users.'
+                : `Their access level will change from "${confirmRole.user.role}" to "${confirmRole.newRole}".`}
+            </p>
+            <div className="confirm-actions">
+              <button className="wallet-btn" onClick={() => setConfirmRole(null)}>Cancel</button>
+              <button className="wallet-btn primary" onClick={() => applyRoleChange(confirmRole.user, confirmRole.newRole)}>
+                Confirm change
               </button>
             </div>
           </div>

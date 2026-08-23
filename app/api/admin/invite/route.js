@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/requireAdmin';
+import { logAdminAction } from '@/lib/auditLog';
 
 export async function POST(request) {
   const check = await requireAdmin(request);
@@ -30,6 +31,14 @@ export async function POST(request) {
   if (finalRole !== 'user' && data?.user?.id) {
     await admin.from('profiles').update({ role: finalRole }).eq('id', data.user.id);
   }
+
+  await logAdminAction({
+    actor: check.user,
+    action: 'invite_user',
+    targetUserId: data?.user?.id,
+    targetEmail: email.trim().toLowerCase(),
+    details: { role: finalRole },
+  });
 
   return NextResponse.json({ ok: true, userId: data?.user?.id });
 }

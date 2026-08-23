@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   ['/dashboard/admin', '▦', 'Overview', 'editor'],
   ['/dashboard/admin/users', '◍', 'Users', 'admin'],
   ['/dashboard/admin/blog', '✎', 'Blog', 'editor'],
+  ['/dashboard/admin/messages', '✉', 'Messages', 'editor'],
   ['/dashboard/admin/seo', '◈', 'SEO', 'admin'],
 ];
 

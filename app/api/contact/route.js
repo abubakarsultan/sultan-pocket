@@ -1,4 +1,5 @@
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,6 +17,20 @@ export async function POST(request) {
     }
     if (String(message).length > 5000) {
       return Response.json({ error: 'Message is too long.' }, { status: 400 });
+    }
+
+    // Save to the database first so the message survives even if the email
+    // send below fails or Resend is having issues. Non-fatal if this errors.
+    try {
+      const admin = supabaseAdmin();
+      await admin.from('contact_messages').insert({
+        name: String(name).trim(),
+        email: String(email).trim(),
+        subject: String(subject).trim(),
+        message: String(message).trim(),
+      });
+    } catch (dbErr) {
+      console.error('Failed to save contact message to DB:', dbErr);
     }
 
     const res = await fetch('https://api.resend.com/emails', {
