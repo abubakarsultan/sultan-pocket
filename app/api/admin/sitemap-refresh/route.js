@@ -1,22 +1,24 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 export async function POST(request) {
-  const auth = request.headers.get('authorization');
-  const cookie = request.headers.get('cookie') || '';
-  // The admin UI already requires an authenticated editor/admin. The browser
-  // request is only used to trigger revalidation; no public GET is exposed.
+  const check = await requireAdmin(request);
+  if (check.error) {
+    return NextResponse.json({ error: check.error }, { status: check.status });
+  }
+
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (url && key) {
-      const supabase = createClient(url, key, { global: { headers: { cookie, Authorization: auth || '' } } });
-      await supabase.auth.getUser();
-    }
     revalidatePath('/sitemap.xml');
-    return NextResponse.json({ ok: true, refreshedAt: new Date().toISOString() });
+    return NextResponse.json({
+      ok: true,
+      refreshedAt: new Date().toISOString(),
+    });
   } catch (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    console.error('Sitemap revalidation failed:', error);
+    return NextResponse.json(
+      { ok: false, error: 'Could not refresh the sitemap.' },
+      { status: 500 },
+    );
   }
 }
