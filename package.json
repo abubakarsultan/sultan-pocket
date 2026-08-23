@@ -1,6 +1,7 @@
 {
   "name": "sultan-pocket",
   "version": "0.1.0",
+  "description": "Sultan Pocket — a personal finance web app with a multi-tool dashboard, user accounts, and a blog.",
   "private": true,
   "scripts": {
     "dev": "next dev",
