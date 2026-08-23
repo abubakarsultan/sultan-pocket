@@ -31,8 +31,25 @@ export default function BlogEditorPage({ mode }) {
 
   function update(key, value) { setForm(f => ({ ...f, [key]: value })); }
 
+  async function refreshSitemap() {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) return;
+
+    try {
+      await fetch('/api/admin/sitemap-refresh', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } catch {
+      // Sitemap refresh is a follow-up operation. A successful post save
+      // should not be reported as failed just because revalidation is down.
+    }
+  }
+
   async function save(e) {
-    e.preventDefault(); setError('');
+    e?.preventDefault();
+    setError('');
     if (!form.title.trim() || !form.slug.trim() || !form.content.replace(/<[^>]*>/g, '').trim()) { setError('Title, slug, and content are required.'); return; }
     setBusy(true);
     const { data: auth } = await supabase.auth.getUser();
@@ -42,7 +59,7 @@ export default function BlogEditorPage({ mode }) {
     else result = await supabase.from('posts').insert({ ...payload, author_id: auth?.user?.id }).select('id').single();
     setBusy(false);
     if (result.error) { setError(result.error.message); return; }
-    try { await fetch('/api/admin/sitemap-refresh', { method: 'POST' }); } catch {}
+    await refreshSitemap();
     router.push('/dashboard/admin/blog');
   }
 
@@ -52,10 +69,10 @@ export default function BlogEditorPage({ mode }) {
     <main className="container admin-blog-editor" style={{ padding: '28px 24px 70px' }}>
       <div className="editor-topbar">
         <div><Link href="/dashboard/admin/blog" className="back-link">← All posts</Link><h1>{mode === 'edit' ? 'Edit post' : 'New post'}</h1></div>
-        <div className="editor-actions"><Link href="/dashboard/admin/blog" className="btn">Cancel</Link><button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save post'}</button></div>
+        <div className="editor-actions"><Link href="/dashboard/admin/blog" className="btn">Cancel</Link><button type="submit" form="blog-editor-form" className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save post'}</button></div>
       </div>
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
-      <form onSubmit={save}>
+      <form id="blog-editor-form" onSubmit={save}>
         <section className="editor-paper">
           <div className="editor-title-fields">
             <input className="editor-title-input" value={form.title} onChange={(e) => { const title = e.target.value; update('title', title); if (!slugTouched) update('slug', slugify(title)); }} placeholder="Post title" />
