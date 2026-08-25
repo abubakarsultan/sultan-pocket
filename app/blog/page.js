@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import styles from './blog.module.css';
 
 export const metadata = {
   title: 'Blog — Sultan Pocket',
@@ -27,34 +28,32 @@ async function getPosts() {
 export default async function BlogPage() {
   const posts = await getPosts();
   return (
-    <main className="container blog-list-page" style={{ padding: '48px 24px 80px' }}>
-      <header className="blog-list-header">
-        <div>
-          <p className="blog-eyebrow">Sultan Pocket</p>
-          <h1>Money, made simpler.</h1>
-          <p>Practical guides for budgeting, saving, spending smarter, and building better money habits.</p>
-        </div>
+    <main className={`container ${styles.page}`}>
+      <header className={styles.listHeader}>
+        <p className={styles.eyebrow}>Sultan Pocket</p>
+        <h1>Money, made simpler.</h1>
+        <p>Practical guides for budgeting, saving, spending smarter, and building better money habits.</p>
       </header>
 
       {posts.length === 0 ? (
-        <div className="blog-empty">
+        <div className={styles.empty}>
           <h2>No posts yet</h2>
           <p>We&apos;re preparing the first guides. Check back soon.</p>
         </div>
       ) : (
-        <div className="blog-grid">
+        <div className={styles.grid}>
           {posts.map((p, index) => (
-            <Link key={p.id} href={`/blog/${p.slug}`} className={`blog-card${index === 0 ? ' blog-card-featured' : ''}`}>
+            <Link key={p.id} href={`/blog/${p.slug}`} className={`${styles.card} ${index === 0 ? styles.featured : ''}`}>
               {p.cover_image_url ? (
-                <img src={p.cover_image_url} alt="" className="blog-card-image" />
+                <img src={p.cover_image_url} alt="" className={styles.image} />
               ) : (
-                <div className="blog-card-image blog-card-placeholder" aria-hidden="true"><span>SP</span></div>
+                <div className={`${styles.image} ${styles.placeholder}`} aria-hidden="true"><span>SP</span></div>
               )}
-              <div className="blog-card-body">
+              <div className={styles.body}>
                 <time dateTime={p.created_at}>{new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
                 <h2>{p.title}</h2>
                 {p.excerpt && <p>{p.excerpt}</p>}
-                <span className="blog-read-more">Read article →</span>
+                <span className={styles.readMore}>Read article →</span>
               </div>
             </Link>
           ))}
