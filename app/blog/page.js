@@ -11,15 +11,20 @@ async function getPosts() {
     .select('id,title,slug,excerpt,cover_image_url,created_at')
     .eq('published', true)
     .order('created_at', { ascending: false });
-  if (error) return [];
-  return data || [];
+  if (error) return { posts: [], error: error.message };
+  return { posts: data || [], error: null };
 }
 
 export default async function BlogPage() {
-  const posts = await getPosts();
+  const { posts, error } = await getPosts();
   return (
     <main className="container" style={{ padding: '56px 24px' }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 22 }}>Blog</h1>
+      {error && (
+        <p style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 16, fontFamily: 'monospace' }}>
+          DEBUG (remove after fixing): {error}
+        </p>
+      )}
       {posts.length === 0 ? (
         <p style={{ fontSize: 14, color: 'var(--text-faint)' }}>No posts yet. Check back soon.</p>
       ) : (

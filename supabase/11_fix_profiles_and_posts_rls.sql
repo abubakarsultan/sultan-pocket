@@ -92,4 +92,4 @@ create policy "posts_select_editor_or_admin_all" on public.posts
 -- 4. Safety net: make sure the known admin account is actually role='admin'.
 -- Replace the email below if this isn't the right account.
 update public.profiles set role = 'admin'
-where email = 'abubakarsultan15607@gmail.com';
+where email = 'arshuman4653@gmail.com';

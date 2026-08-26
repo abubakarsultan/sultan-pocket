@@ -12,12 +12,13 @@ function getClient() {
 
 async function getPost(slug) {
   const supabase = getClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('posts')
     .select('title,excerpt,content,cover_image_url,created_at,published,meta_title,meta_description')
     .eq('slug', slug)
     .eq('published', true)
     .maybeSingle();
+  if (error) console.error('getPost error:', error.message);
   return data;
 }
 
