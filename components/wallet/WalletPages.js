@@ -2196,7 +2196,7 @@ function ReportsInner() {
     </div>
     <section className="wallet-panel">
       <div className="wallet-panel-head"><div><span className="wallet-section-kicker">SIX MONTH VIEW</span><h2>Income & spending trend</h2></div></div>
-      <div className="report-bars">{history.map(x=><div className="report-bar-col" key={x.month}><div className="report-bar-pair"><i style={{height:`${Math.max(4,(x.income/maxIncome)*120)}px`}} title={`Income ${money(x.income,currency)}`}/><em style={{height:`${Math.max(4,(x.expenses/maxExpense)*120)}px`} title={`Expenses ${money(x.expenses,currency)}`}/></div><span>{new Date(`${x.month}-01T00:00:00`).toLocaleString('en-US',{month:'short'})}</span></div>)}</div>
+      <div className="report-bars">{history.map(x=><div className="report-bar-col" key={x.month}><div className="report-bar-pair"><i style={{height:`${Math.max(4,(x.income/maxIncome)*120)}px`}} title={`Income ${money(x.income,currency)}`}/><em style={{height:`${Math.max(4,(x.expenses/maxExpense)*120)}px`}} title={`Expenses ${money(x.expenses,currency)}`}/></div><span>{new Date(`${x.month}-01T00:00:00`).toLocaleString('en-US',{month:'short'})}</span></div>)}</div>
       <div className="report-legend"><span><i className="income-dot"/>Income</span><span><i className="expense-dot"/>Expenses</span></div>
     </section>
     <div className="wallet-grid two">
