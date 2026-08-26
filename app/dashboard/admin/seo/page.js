@@ -36,15 +36,15 @@ export default function AdminSeoPage() {
     if (page.canonical_url) { try { if (new URL(page.canonical_url).protocol !== 'https:') throw new Error(); } catch { setError('Canonical URL must be a valid HTTPS URL.'); setSaving(false); return; } }
     if (page.og_image_url) { try { if (new URL(page.og_image_url).protocol !== 'https:') throw new Error(); } catch { setError('OG image must be a valid HTTPS URL.'); setSaving(false); return; } }
     const payload = { ...page, updated_at: new Date().toISOString() }; delete payload.label;
-    const { error: e } = await supabase.from('page_seo').upsert(payload, { onConflict: 'path' });
-    setSaving(false); if (e) setError(e.message); else setNotice(`${page.label} SEO settings saved.`);
+    const { error: saveError } = await supabase.from('page_seo').upsert(payload, { onConflict: 'path' });
+    setSaving(false); if (saveError) setError(saveError.message); else setNotice(`${page.label} SEO settings saved.`);
   }
 
   async function saveSiteDefaults(e) {
     e.preventDefault(); setSiteSaving(true); setError(''); setNotice('');
     for (const [label, value] of [['Instagram',site.instagram_url],['Facebook',site.facebook_url],['X',site.x_url],['LinkedIn',site.linkedin_url]]) { if (!value) continue; try { if (new URL(value).protocol !== 'https:') throw new Error(); } catch { setError(`${label} URL must be a valid HTTPS URL.`); setSiteSaving(false); return; } }
-    const { error: e } = await supabase.from('site_settings').update({ ...site, updated_at:new Date().toISOString() }).eq('id',1);
-    setSiteSaving(false); if (e) setError(e.message); else setNotice('Global SEO defaults saved.');
+    const { error: saveError } = await supabase.from('site_settings').update({ ...site, updated_at:new Date().toISOString() }).eq('id',1);
+    setSiteSaving(false); if (saveError) setError(saveError.message); else setNotice('Global SEO defaults saved.');
   }
 
   async function refreshSitemap() {
