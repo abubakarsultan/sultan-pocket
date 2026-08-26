@@ -1,0 +1,164 @@
+/* Sultan Pocket glass surfaces: navbar, cards, buttons, theme toggle, loading
+   spinner. The old animated floating "liquid blob" background layer has been
+   removed on purpose (it was distracting) — everything below is static
+   frosted-glass styling on real UI elements, not a moving background. */
+
+.site-navbar{background:color-mix(in srgb,var(--porcelain) 78%,transparent)!important;border-bottom-color:color-mix(in srgb,var(--border) 72%,transparent)!important;-webkit-backdrop-filter:blur(18px) saturate(135%);backdrop-filter:blur(18px) saturate(135%);box-shadow:0 8px 30px rgba(20,20,20,.06)}
+[data-theme="dark"] .site-navbar{background:color-mix(in srgb,var(--surface) 72%,transparent)!important;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.site-navbar::after{content:'';position:absolute;inset:0 0 auto;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 72%,transparent),transparent)}
+.profile-menu-wrap>[role="menu"]{background:color-mix(in srgb,var(--surface) 74%,transparent)!important;border-color:color-mix(in srgb,var(--border) 78%,transparent)!important;box-shadow:0 24px 70px rgba(20,20,20,.16),inset 0 1px 0 rgba(255,255,255,.55)!important;-webkit-backdrop-filter:blur(24px) saturate(145%);backdrop-filter:blur(24px) saturate(145%)}
+[data-theme="dark"] .profile-menu-wrap>[role="menu"]{background:color-mix(in srgb,var(--surface) 76%,transparent)!important;box-shadow:0 24px 70px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important}
+.profile-trigger{background:color-mix(in srgb,var(--surface) 72%,transparent)!important;border-color:color-mix(in srgb,var(--border-strong) 75%,transparent)!important;-webkit-backdrop-filter:blur(14px) saturate(135%);backdrop-filter:blur(14px) saturate(135%)}
+.profile-trigger:hover,.profile-trigger[aria-expanded="true"]{border-color:color-mix(in srgb,var(--signal) 55%,var(--border))!important;box-shadow:0 8px 24px rgba(0,87,255,.10)}
+main:has(.auth-form-stagger){position:relative;min-height:calc(100vh - 110px)!important;overflow:hidden}
+main:has(.auth-form-stagger)::before,main:has(.auth-form-stagger)::after{content:'';position:absolute;border-radius:999px;pointer-events:none;filter:blur(55px);opacity:.18}
+main:has(.auth-form-stagger)::before{width:260px;height:260px;top:10%;left:8%;background:var(--signal)}
+main:has(.auth-form-stagger)::after{width:220px;height:220px;right:8%;bottom:8%;background:color-mix(in srgb,var(--signal) 35%,var(--porcelain))}
+.auth-form-stagger{position:relative;z-index:1;background:color-mix(in srgb,var(--surface) 76%,transparent)!important;border-color:color-mix(in srgb,var(--border) 74%,transparent)!important;box-shadow:0 28px 80px rgba(20,20,20,.12),inset 0 1px 0 rgba(255,255,255,.68)!important;-webkit-backdrop-filter:blur(26px) saturate(140%);backdrop-filter:blur(26px) saturate(140%)}
+[data-theme="dark"] .auth-form-stagger{background:color-mix(in srgb,var(--surface) 78%,transparent)!important;box-shadow:0 28px 80px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important}
+.auth-form-stagger .field input{background:color-mix(in srgb,var(--surface-2) 82%,transparent);border-color:color-mix(in srgb,var(--border) 82%,transparent)}
+.auth-form-stagger .field input:focus{background:var(--surface);box-shadow:0 0 0 3px color-mix(in srgb,var(--signal) 13%,transparent)}
+.auth-form-stagger .btn-primary{box-shadow:0 8px 22px rgba(0,87,255,.18)}
+.auth-form-stagger .form-error,.auth-form-stagger .form-notice{border-radius:10px;padding:9px 11px;background:color-mix(in srgb,var(--surface) 62%,transparent);border:1px solid color-mix(in srgb,currentColor 18%,var(--border))}
+@media(prefers-reduced-motion:no-preference){.site-navbar,.profile-trigger,.profile-menu-wrap>[role="menu"],.auth-form-stagger{transition:background-color .22s ease,border-color .22s ease,box-shadow .22s ease,transform .22s ease}.auth-form-stagger:hover{transform:translateY(-1px)!important}}
+@media(prefers-reduced-motion:reduce){main:has(.auth-form-stagger)::before,main:has(.auth-form-stagger)::after{display:none}}
+@media(max-width:650px){.site-navbar>.container{padding-left:14px!important;padding-right:14px!important}}
+
+/* ---------- Cards: frosted glass — static by default, reacts only on hover/tap ---------- */
+.card{
+  position:relative;
+  background:color-mix(in srgb,var(--surface) 50%,transparent)!important;
+  border-color:color-mix(in srgb,var(--border) 60%,transparent)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(120%);
+  backdrop-filter:blur(20px) saturate(120%);
+  box-shadow:0 16px 44px rgba(20,20,20,.09),inset 0 1px 0 rgba(255,255,255,.5);
+  overflow:hidden;
+}
+.card::before{
+  content:'';
+  position:absolute;inset:0 0 auto;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 70%,transparent),transparent);
+}
+.card::after{
+  content:'';
+  position:absolute;top:-60%;left:-70%;width:45%;height:220%;
+  background:linear-gradient(115deg,transparent,color-mix(in srgb,#fff 55%,transparent),transparent);
+  transform:rotate(18deg) translateX(-120%);
+  transition:transform .85s cubic-bezier(.22,1,.36,1);
+  pointer-events:none;
+}
+.card:hover::after{transform:rotate(18deg) translateX(280%);}
+[data-theme="dark"] .card{
+  background:color-mix(in srgb,var(--surface) 54%,transparent)!important;
+  box-shadow:0 16px 44px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.07);
+}
+/* Desktop gets the deeper blur + a hover-triggered glow (not a forever-looping one). */
+@media(min-width:900px){
+  .card{backdrop-filter:blur(36px) saturate(120%);-webkit-backdrop-filter:blur(36px) saturate(120%);box-shadow:0 24px 70px rgba(20,20,20,.10),inset 0 1px 0 rgba(255,255,255,.55);}
+  [data-theme="dark"] .card{box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.07);}
+  .card:hover{box-shadow:0 24px 70px rgba(20,20,20,.10),inset 0 1px 0 rgba(255,255,255,.55),0 0 30px rgba(255,255,255,.20);transition:box-shadow .35s ease;}
+  [data-theme="dark"] .card:hover{box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.07),0 0 26px rgba(255,255,255,.10);}
+}
+@media(prefers-reduced-motion:reduce){.card::after{display:none;}}
+
+/* ---------- Buttons: full pill, glow only on hover/focus (no idle animation) ---------- */
+.btn{
+  position:relative;
+  border-radius:999px!important;
+  background:color-mix(in srgb,var(--surface) 55%,transparent)!important;
+  border-color:color-mix(in srgb,var(--border-strong) 65%,transparent)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(130%);
+  backdrop-filter:blur(10px) saturate(130%);
+  overflow:hidden;
+  isolation:isolate;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+}
+.btn::before{
+  content:'';
+  position:absolute;inset:0;border-radius:inherit;z-index:-1;
+  background:radial-gradient(circle at 50% 50%,color-mix(in srgb,#fff 45%,transparent),transparent 70%);
+  opacity:0;transform:scale(.6);
+  transition:opacity .32s ease,transform .32s cubic-bezier(.22,1,.36,1);
+}
+.btn:hover::before,.btn:focus-visible::before{opacity:1;transform:scale(1);}
+.btn:hover,.btn:focus-visible{
+  border-color:color-mix(in srgb,var(--text) 35%,var(--border))!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.14);
+  transform:translateY(-1px);
+}
+.btn-primary{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--signal) 92%,#fff 8%),var(--signal))!important;
+  border-color:var(--signal)!important;
+  color:#fff;
+  box-shadow:0 10px 26px rgba(0,87,255,.24),inset 0 1px 0 rgba(255,255,255,.35);
+}
+.btn-primary::before{background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.4),transparent 70%);}
+.btn-primary:hover{
+  background:linear-gradient(180deg,var(--signal),var(--signal-dark))!important;
+  border-color:var(--signal-dark)!important;
+  box-shadow:0 10px 34px rgba(0,87,255,.42),inset 0 1px 0 rgba(255,255,255,.35);
+}
+.btn-ghost{background:color-mix(in srgb,var(--surface) 26%,transparent)!important;border-color:transparent!important;box-shadow:none;}
+[data-theme="dark"] .btn{background:color-mix(in srgb,var(--surface) 58%,transparent)!important;}
+@media(min-width:900px){.btn{backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%);}}
+
+/* ---------- Theme toggle: crossfade icons + tap ripple (no idle animation) ---------- */
+.theme-toggle-btn{
+  position:relative;
+  width:40px;height:40px;border-radius:999px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid color-mix(in srgb,var(--border-strong) 70%,transparent);
+  background:color-mix(in srgb,var(--surface) 60%,transparent);
+  -webkit-backdrop-filter:blur(10px) saturate(120%);
+  backdrop-filter:blur(10px) saturate(120%);
+  color:var(--text-dim);
+  overflow:hidden;
+  transition:border-color .22s ease,box-shadow .22s ease,color .22s ease;
+  flex:0 0 auto;
+}
+.theme-toggle-btn:hover{
+  border-color:color-mix(in srgb,var(--text) 40%,var(--border));
+  color:var(--text);
+  box-shadow:0 0 16px color-mix(in srgb,#fff 25%,transparent);
+}
+@media(min-width:900px){.theme-toggle-btn{backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%);}}
+.theme-toggle-icons{position:relative;width:20px;height:20px;}
+.theme-toggle-icons svg{
+  position:absolute;inset:0;width:20px;height:20px;
+  opacity:0;transform:rotate(-90deg) scale(.5);
+  transition:opacity .38s cubic-bezier(.22,1,.36,1),transform .38s cubic-bezier(.22,1,.36,1);
+}
+.theme-toggle-icons svg.is-visible{opacity:1;transform:rotate(0) scale(1);}
+.theme-toggle-ripple{
+  position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:999px;
+  background:color-mix(in srgb,var(--text) 30%,transparent);
+  transform:translate(-50%,-50%) scale(1);
+  animation:theme-toggle-ripple .5s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes theme-toggle-ripple{to{transform:translate(-50%,-50%) scale(9);opacity:0;}}
+@media(prefers-reduced-motion:reduce){
+  .theme-toggle-icons svg{transition:opacity .18s ease;transform:none!important;}
+  .theme-toggle-ripple{display:none;}
+  .btn::before{transition:opacity .18s ease;}
+}
+
+/* ---------- Navbar: lighter frost on mobile, deeper on desktop ---------- */
+.site-navbar{
+  -webkit-backdrop-filter:blur(14px) saturate(130%)!important;
+  backdrop-filter:blur(14px) saturate(130%)!important;
+}
+@media(min-width:900px){
+  .site-navbar{-webkit-backdrop-filter:blur(28px) saturate(140%)!important;backdrop-filter:blur(28px) saturate(140%)!important;}
+}
+
+/* ---------- Root loading spinner ---------- */
+.loading-spinner{display:flex;align-items:center;justify-content:center;}
+.loading-spinner-ring{
+  width:36px;height:36px;border-radius:999px;
+  border:3px solid color-mix(in srgb,var(--border-strong) 60%,transparent);
+  border-top-color:var(--signal);
+  animation:loading-spin .7s linear infinite;
+}
+@keyframes loading-spin{to{transform:rotate(360deg);}}
+@media(prefers-reduced-motion:reduce){.loading-spinner-ring{animation:none;border-top-color:var(--border-strong);}}
