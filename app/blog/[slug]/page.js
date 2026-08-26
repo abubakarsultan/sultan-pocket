@@ -1,8 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
-import { marked } from 'marked';
-
-marked.setOptions({ breaks: true });
 
 export const revalidate = 30;
 
@@ -14,7 +11,7 @@ async function getPost(slug) {
   const supabase = getClient();
   const { data, error } = await supabase
     .from('posts')
-    .select('title,excerpt,content,cover_image_url,created_at,published,meta_title,meta_description')
+    .select('title,excerpt,content,cover_image_url,category,created_at,published,meta_title,meta_description')
     .eq('slug', slug)
     .eq('published', true)
     .maybeSingle();
@@ -42,6 +39,7 @@ export default async function BlogPostPage({ params }) {
 
   return (
     <main className="container" style={{ padding: '56px 24px', maxWidth: 720 }}>
+      <span className="blog-badge" style={{ marginBottom: 12, display: 'inline-block' }}>{post.category || 'General'}</span>
       <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, lineHeight: 1.25 }}>{post.title}</h1>
       <div style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 24 }}>
         {new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -52,7 +50,7 @@ export default async function BlogPostPage({ params }) {
       <div
         className="blog-content"
         style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--text)' }}
-        dangerouslySetInnerHTML={{ __html: marked.parse(post.content || '') }}
+        dangerouslySetInnerHTML={{ __html: post.content || '' }}
       />
     </main>
   );

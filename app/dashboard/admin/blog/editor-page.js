@@ -6,8 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 
+const CATEGORIES = ['General', 'Budgeting', 'Savings', 'Debt', 'Guides', 'Product updates'];
 function slugify(text) { return text.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-'); }
-const emptyForm = { title: '', slug: '', excerpt: '', content: '', cover_image_url: '', meta_title: '', meta_description: '', published: false };
+const emptyForm = { title: '', slug: '', excerpt: '', content: '', cover_image_url: '', category: 'General', meta_title: '', meta_description: '', published: false };
 
 export default function BlogEditorPage({ mode }) {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function BlogEditorPage({ mode }) {
     if (!id) return;
     supabase.from('posts').select('*').eq('id', id).maybeSingle().then(({ data, error }) => {
       if (error || !data) setError(error?.message || 'Post not found.');
-      else setForm({ title: data.title || '', slug: data.slug || '', excerpt: data.excerpt || '', content: data.content || '', cover_image_url: data.cover_image_url || '', meta_title: data.meta_title || '', meta_description: data.meta_description || '', published: !!data.published });
+      else setForm({ title: data.title || '', slug: data.slug || '', excerpt: data.excerpt || '', content: data.content || '', cover_image_url: data.cover_image_url || '', category: data.category || 'General', meta_title: data.meta_title || '', meta_description: data.meta_description || '', published: !!data.published });
       setLoading(false);
     });
   }, [mode, params]);
@@ -67,6 +68,7 @@ export default function BlogEditorPage({ mode }) {
           <div className="editor-settings-head"><div><h2>Post settings</h2><p>Details used on the blog listing, sharing, and search engines.</p></div><label className="publish-toggle"><input type="checkbox" checked={form.published} onChange={(e) => update('published', e.target.checked)} /><span>Published</span></label></div>
           <div className="editor-settings-grid">
             <div className="field"><label>Excerpt</label><textarea value={form.excerpt} onChange={(e) => update('excerpt', e.target.value)} placeholder="Short summary shown on the blog page" /></div>
+            <div className="field"><label>Category</label><select value={form.category} onChange={(e) => update('category', e.target.value)}>{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
             <div className="field"><label>Cover image URL</label><input value={form.cover_image_url} onChange={(e) => update('cover_image_url', e.target.value)} placeholder="https://…" /></div>
             <div className="field"><label>SEO title</label><input value={form.meta_title} onChange={(e) => update('meta_title', e.target.value)} placeholder="Falls back to post title" /></div>
             <div className="field"><label>SEO description</label><textarea value={form.meta_description} onChange={(e) => update('meta_description', e.target.value)} placeholder="Falls back to excerpt" /></div>
