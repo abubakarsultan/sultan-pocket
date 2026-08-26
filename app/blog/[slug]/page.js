@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
-import { sanitizeBlogHtml } from '@/lib/sanitizeBlogHtml';
-import styles from '../blog.module.css';
+import { marked } from 'marked';
+
+marked.setOptions({ breaks: true });
 
 export const revalidate = 30;
 
@@ -10,56 +10,27 @@ function getClient() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://sultanpocket.online').replace(/\/$/, '');
-}
-
 async function getPost(slug) {
   const supabase = getClient();
   const { data } = await supabase
     .from('posts')
-    .select('id,title,slug,excerpt,content,cover_image_url,created_at,updated_at,published,meta_title,meta_description')
+    .select('title,excerpt,content,cover_image_url,created_at,published,meta_title,meta_description')
     .eq('slug', slug)
     .eq('published', true)
     .maybeSingle();
   return data;
 }
 
-async function getRelatedPosts(postId) {
-  const supabase = getClient();
-  const { data } = await supabase
-    .from('posts')
-    .select('id,title,slug,excerpt,cover_image_url,created_at')
-    .eq('published', true)
-    .neq('id', postId)
-    .order('created_at', { ascending: false })
-    .limit(3);
-  return data || [];
-}
-
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return { title: 'Post not found — Sultan Pocket' };
-
   const title = post.meta_title || post.title;
   const description = post.meta_description || post.excerpt || undefined;
-  const url = `${siteUrl()}/blog/${post.slug}`;
   return {
     title: `${title} — Sultan Pocket`,
     description,
-    alternates: { canonical: url },
-    openGraph: {
-      type: 'article', url, title, description,
-      publishedTime: post.created_at,
-      modifiedTime: post.updated_at || post.created_at,
-      images: post.cover_image_url ? [{ url: post.cover_image_url, alt: post.title }] : undefined
-    },
-    twitter: {
-      card: post.cover_image_url ? 'summary_large_image' : 'summary',
-      title, description,
-      images: post.cover_image_url ? [post.cover_image_url] : undefined
-    }
+    openGraph: { title, description },
   };
 }
 
@@ -68,66 +39,20 @@ export default async function BlogPostPage({ params }) {
   const post = await getPost(slug);
   if (!post) notFound();
 
-  const related = await getRelatedPosts(post.id);
-  const url = `${siteUrl()}/blog/${post.slug}`;
-  const safeContent = sanitizeBlogHtml(post.content || '');
-  const articleSchema = {
-    '@context': 'https://schema.org', '@type': 'Article', headline: post.title,
-    description: post.meta_description || post.excerpt || undefined,
-    datePublished: post.created_at, dateModified: post.updated_at || post.created_at,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-    image: post.cover_image_url ? [post.cover_image_url] : undefined,
-    author: { '@type': 'Organization', name: 'Sultan Pocket', url: siteUrl() },
-    publisher: { '@type': 'Organization', name: 'Sultan Pocket', url: siteUrl() }
-  };
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl() },
-      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl()}/blog` },
-      { '@type': 'ListItem', position: 3, name: post.title, item: url }
-    ]
-  };
-
   return (
-    <main className={`container ${styles.postPage}`}>
-      <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-        <Link href="/">Home</Link><span>›</span><Link href="/blog">Blog</Link><span>›</span><span>{post.title}</span>
-      </nav>
-
-      <article className={styles.article}>
-        <header className={styles.header}>
-          <h1>{post.title}</h1>
-          <div className={styles.meta}>
-            <time dateTime={post.created_at}>{new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
-            {post.updated_at && post.updated_at !== post.created_at && <span>Updated {new Date(post.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>}
-          </div>
-        </header>
-
-        {post.cover_image_url && <img className={styles.hero} src={post.cover_image_url} alt={post.title} />}
-        <div className={styles.content} dangerouslySetInnerHTML={{ __html: safeContent }} />
-      </article>
-
-      {related.length > 0 && (
-        <section className={styles.related} aria-labelledby="related-posts-title">
-          <h2 id="related-posts-title">More from the blog</h2>
-          <div className={styles.relatedGrid}>
-            {related.map((p) => (
-              <Link key={p.id} href={`/blog/${p.slug}`} className={styles.relatedCard}>
-                {p.cover_image_url && <img src={p.cover_image_url} alt="" />}
-                <div className={styles.relatedBody}>
-                  <h3>{p.title}</h3>
-                  {p.excerpt && <p>{p.excerpt}</p>}
-                  <time dateTime={p.created_at}>{new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</time>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+    <main className="container" style={{ padding: '56px 24px', maxWidth: 720 }}>
+      <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, lineHeight: 1.25 }}>{post.title}</h1>
+      <div style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 24 }}>
+        {new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+      </div>
+      {post.cover_image_url && (
+        <img src={post.cover_image_url} alt={post.title} style={{ width: '100%', borderRadius: 12, marginBottom: 24 }} />
       )}
-
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, '\\u003c') }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, '\\u003c') }} />
+      <div
+        className="blog-content"
+        style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--text)' }}
+        dangerouslySetInnerHTML={{ __html: marked.parse(post.content || '') }}
+      />
     </main>
   );
 }

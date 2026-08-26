@@ -51,7 +51,7 @@ export default function ProfileMenu({compact=false}){
       <div style={{display:'grid',gap:2}}>
         <Link ref={firstItemRef} role="menuitem" href={editUrl} onClick={close} style={itemStyle}>Personalization</Link>
         <Link role="menuitem" href={profileUrl} onClick={close} style={itemStyle}>Profile</Link>
-        <Link role="menuitem" href="/dashboard/security" onClick={close} style={itemStyle}>Settings & Security</Link>
+        <Link role="menuitem" href={editUrl} onClick={close} style={itemStyle}>Settings</Link>
       </div>
       <div style={{height:1,background:'var(--border)',margin:'6px 4px'}} />
       <div style={{display:'grid',gap:2}}>

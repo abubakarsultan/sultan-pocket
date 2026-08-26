@@ -1,65 +1,174 @@
 'use client';
-
-import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
+import MarkdownEditor from '@/components/admin/MarkdownEditor';
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+const emptyForm = { id: null, title: '', slug: '', excerpt: '', content: '', cover_image_url: '', meta_title: '', meta_description: '', published: false };
 
 export default function AdminBlogPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [isEditor, setIsEditor] = useState(null);
-  const [posts, setPosts] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(null); // "isAdmin" here really means "has editor/admin access"
+  const [posts, setPosts] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [slugTouched, setSlugTouched] = useState(false);
 
   const loadPosts = useCallback(async () => {
-    const { data, error } = await supabase.from('posts').select('id,title,slug,excerpt,published,created_at,updated_at').order('created_at', { ascending: false });
-    if (error) setError(error.message); else setPosts(data || []);
+    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    setPosts(data || []);
   }, []);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { router.replace('/signin'); return; }
-    supabase.rpc('is_editor_or_admin').then(({ data }) => { setIsEditor(!!data); if (data) loadPosts(); });
+    supabase.rpc('is_editor_or_admin').then(({ data }) => {
+      setIsAdmin(!!data);
+      if (data) loadPosts();
+    });
   }, [loading, user, router, loadPosts]);
 
-  async function deletePost(id) {
-    if (!confirm('Delete this post? This cannot be undone.')) return;
-    const { error } = await supabase.from('posts').delete().eq('id', id);
-    if (error) setError(error.message); else loadPosts();
+  function startNew() {
+    setForm(emptyForm);
+    setSlugTouched(false);
+    setError('');
   }
 
-  if (loading || isEditor === null || posts === null) return <main className="container" style={{ padding: 40 }}><div className="wallet-empty">Loading…</div></main>;
-  if (!isEditor) return <main className="container" style={{ padding: 40 }}><div className="wallet-empty">You don't have access to this page.</div></main>;
+  function startEdit(post) {
+    setForm(post);
+    setSlugTouched(true);
+    setError('');
+  }
+
+  function onTitleChange(title) {
+    setForm((f) => ({ ...f, title, slug: slugTouched ? f.slug : slugify(title) }));
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setError('');
+    if (!form.title || !form.slug || !form.content) {
+      setError('Title, slug, and content are required.');
+      return;
+    }
+    setBusy(true);
+    const payload = {
+      title: form.title,
+      slug: form.slug,
+      excerpt: form.excerpt,
+      content: form.content,
+      cover_image_url: form.cover_image_url,
+      meta_title: form.meta_title,
+      meta_description: form.meta_description,
+      published: form.published,
+      updated_at: new Date().toISOString(),
+    };
+    let res;
+    if (form.id) {
+      res = await supabase.from('posts').update(payload).eq('id', form.id);
+    } else {
+      res = await supabase.from('posts').insert({ ...payload, author_id: user.id });
+    }
+    setBusy(false);
+    if (res.error) { setError(res.error.message); return; }
+    startNew();
+    loadPosts();
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    await supabase.from('posts').delete().eq('id', id);
+    loadPosts();
+    if (form.id === id) startNew();
+  }
+
+  if (loading || isAdmin === null) {
+    return <main style={{ padding: 60, textAlign: 'center', color: 'var(--text-faint)' }}>Loading…</main>;
+  }
+  if (!isAdmin) {
+    return <main style={{ padding: 60, textAlign: 'center', color: 'var(--text-faint)' }}>You don't have access to this page.</main>;
+  }
 
   return (
-    <main className="container admin-blog-list" style={{ padding: '40px 24px' }}>
-      <div className="admin-page-head">
-        <div><h1>Blog posts</h1><p>Manage every post from one clean list.</p></div>
-        <Link href="/dashboard/admin/blog/new" className="btn btn-primary">+ New post</Link>
-      </div>
-      {error && <div className="form-error" style={{ marginBottom: 14 }}>{error}</div>}
-      <div className="wallet-panel">
-        <div className="wallet-panel-head"><h2>All posts</h2><span>{posts.length} total</span></div>
-        <div className="wallet-table-wrap">
-          <table className="wallet-table">
-            <thead><tr><th>Post</th><th>Status</th><th>Created</th><th>Updated</th><th></th></tr></thead>
-            <tbody>
-              {posts.map((p) => (
-                <tr key={p.id}>
-                  <td><div style={{ fontWeight: 650 }}>{p.title || 'Untitled'}</div><div style={{ fontSize: 11, color: 'var(--text-faint)' }}>/{p.slug}</div></td>
-                  <td><span className="wallet-pill">{p.published ? 'Published' : 'Draft'}</span></td>
-                  <td>{new Date(p.created_at).toLocaleDateString()}</td>
-                  <td>{p.updated_at ? new Date(p.updated_at).toLocaleDateString() : '—'}</td>
-                  <td><div className="table-actions"><Link href={`/dashboard/admin/blog/edit/${p.id}`} className="table-action edit">Edit</Link><button className="table-action delete" onClick={() => deletePost(p.id)}>Delete</button></div></td>
-                </tr>
-              ))}
-              {posts.length === 0 && <tr><td colSpan={5} className="wallet-empty">No posts yet. Create your first post.</td></tr>}
-            </tbody>
-          </table>
+    <main className="container" style={{ padding: '40px 24px', display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 24 }}>
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700 }}>Blog admin</h1>
+          <button className="btn btn-primary" onClick={startNew}>+ New post</button>
+        </div>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {posts.map((p) => (
+            <div key={p.id} className="card" style={{ padding: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{p.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-faint)' }}>
+                    /{p.slug} · {p.published ? 'Published' : 'Draft'}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="btn" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => startEdit(p)}>Edit</button>
+                  <button className="btn" style={{ padding: '5px 10px', fontSize: 12, color: 'var(--danger)' }} onClick={() => handleDelete(p.id)}>Delete</button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {posts.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>No posts yet.</p>}
         </div>
       </div>
+
+      <form onSubmit={handleSave} className="card">
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>{form.id ? 'Edit post' : 'New post'}</h2>
+        {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
+        <div className="field">
+          <label>Title</label>
+          <input type="text" value={form.title} onChange={(e) => onTitleChange(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Slug (URL)</label>
+          <input type="text" value={form.slug} onChange={(e) => { setSlugTouched(true); setForm((f) => ({ ...f, slug: e.target.value })); }} />
+        </div>
+        <div className="field">
+          <label>Excerpt (short summary)</label>
+          <input type="text" value={form.excerpt || ''} onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))} />
+        </div>
+        <div className="field">
+          <label>Cover image URL (optional)</label>
+          <input type="text" value={form.cover_image_url || ''} onChange={(e) => setForm((f) => ({ ...f, cover_image_url: e.target.value }))} />
+        </div>
+        <div className="field">
+          <label>SEO title (optional — falls back to the post title)</label>
+          <input type="text" value={form.meta_title || ''} onChange={(e) => setForm((f) => ({ ...f, meta_title: e.target.value }))} />
+        </div>
+        <div className="field">
+          <label>SEO description (optional — falls back to the excerpt)</label>
+          <input type="text" value={form.meta_description || ''} onChange={(e) => setForm((f) => ({ ...f, meta_description: e.target.value }))} />
+        </div>
+        <div className="field">
+          <label>Content</label>
+          <MarkdownEditor
+            value={form.content}
+            onChange={(content) => setForm((f) => ({ ...f, content }))}
+          />
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 16 }}>
+          <input type="checkbox" checked={form.published} onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))} />
+          Published (visible on the public blog)
+        </label>
+        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Saving…' : 'Save post'}</button>
+      </form>
     </main>
   );
 }

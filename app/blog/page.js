@@ -1,17 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import styles from './blog.module.css';
 
-export const metadata = {
-  title: 'Blog — Sultan Pocket',
-  description: 'Practical guides and insights about personal finance, budgeting, saving, and smarter money management.',
-  alternates: { canonical: 'https://sultanpocket.online/blog' },
-  openGraph: {
-    title: 'Blog — Sultan Pocket',
-    description: 'Practical guides and insights about personal finance, budgeting, saving, and smarter money management.',
-    url: 'https://sultanpocket.online/blog'
-  }
-};
+export const metadata = { title: 'Blog — Sultan Pocket' };
 export const revalidate = 30;
 
 async function getPosts() {
@@ -28,32 +18,18 @@ async function getPosts() {
 export default async function BlogPage() {
   const posts = await getPosts();
   return (
-    <main className={`container ${styles.page}`}>
-      <header className={styles.listHeader}>
-        <p className={styles.eyebrow}>Sultan Pocket</p>
-        <h1>Money, made simpler.</h1>
-        <p>Practical guides for budgeting, saving, spending smarter, and building better money habits.</p>
-      </header>
-
+    <main className="container" style={{ padding: '56px 24px' }}>
+      <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 22 }}>Blog</h1>
       {posts.length === 0 ? (
-        <div className={styles.empty}>
-          <h2>No posts yet</h2>
-          <p>We&apos;re preparing the first guides. Check back soon.</p>
-        </div>
+        <p style={{ fontSize: 14, color: 'var(--text-faint)' }}>No posts yet. Check back soon.</p>
       ) : (
-        <div className={styles.grid}>
-          {posts.map((p, index) => (
-            <Link key={p.id} href={`/blog/${p.slug}`} className={`${styles.card} ${index === 0 ? styles.featured : ''}`}>
-              {p.cover_image_url ? (
-                <img src={p.cover_image_url} alt="" className={styles.image} />
-              ) : (
-                <div className={`${styles.image} ${styles.placeholder}`} aria-hidden="true"><span>SP</span></div>
-              )}
-              <div className={styles.body}>
-                <time dateTime={p.created_at}>{new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
-                <h2>{p.title}</h2>
-                {p.excerpt && <p>{p.excerpt}</p>}
-                <span className={styles.readMore}>Read article →</span>
+        <div style={{ display: 'grid', gap: 14 }}>
+          {posts.map((p) => (
+            <Link key={p.id} href={`/blog/${p.slug}`} className="card" style={{ display: 'block' }}>
+              <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 6 }}>{p.title}</div>
+              {p.excerpt && <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>{p.excerpt}</div>}
+              <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 8 }}>
+                {new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             </Link>
           ))}

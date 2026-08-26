@@ -1,10 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /dashboard/
-Disallow: /auth/
-Disallow: /api/
-Disallow: /onboarding/
-Disallow: /forgot-password/
-Disallow: /reset-password/
 
 Sitemap: https://sultanpocket.online/sitemap.xml
