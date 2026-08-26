@@ -8,6 +8,7 @@ export default function AdminSeoPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     supabase.from('site_settings').select('*').eq('id', 1).maybeSingle().then(({ data }) => {
@@ -67,9 +68,31 @@ export default function AdminSeoPage() {
         </div>
         {error && <div className="form-error">{error}</div>}
         {notice && <div className="form-notice">{notice}</div>}
-        <button className="btn btn-primary" disabled={saving} type="submit">
-          {saving ? 'Saving…' : 'Save'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-primary" disabled={saving} type="submit">
+            {saving ? 'Saving…' : 'Save SEO settings'}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={refreshing}
+            onClick={async () => {
+              setRefreshing(true); setError(''); setNotice('');
+              try {
+                const res = await fetch('/api/admin/sitemap-refresh', { method: 'POST' });
+                const json = await res.json();
+                if (!res.ok || !json.ok) throw new Error(json.error || 'Could not refresh sitemap.');
+                setNotice('Sitemap refreshed successfully. New published pages and posts are included automatically.');
+              } catch (e) { setError(e.message); }
+              finally { setRefreshing(false); }
+            }}
+          >
+            {refreshing ? 'Refreshing…' : '↻ Refresh sitemap now'}
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 10 }}>
+          The sitemap is generated from your public pages and published blog posts. It also refreshes after a blog post is saved; this button is here for a manual refresh whenever you want.
+        </p>
       </form>
     </div>
   );
