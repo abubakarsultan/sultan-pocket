@@ -123,6 +123,8 @@ function getValidationMessage(tx, nextTransactions){
   if (amount <= 0) return 'Enter a valid amount.';
   if (!tx.date) return 'Select a date.';
   const b = balances(nextTransactions);
+  const priorTransactions = nextTransactions.filter((item) => item !== tx);
+  const priorBalances = balances(priorTransactions);
   const moneyTooLow = (value,label) => value < -0.0001 ? `Not enough ${label} for this transaction.` : '';
   if (tx.type === 'expense') {
     if (tx.method === 'cash') return moneyTooLow(b.cash,'cash');
@@ -138,7 +140,15 @@ function getValidationMessage(tx, nextTransactions){
   if (tx.type === 'repay') {
     const sourceError = tx.method === 'cash' ? moneyTooLow(b.cash,'cash') : moneyTooLow(b.online,'online balance');
     if (sourceError) return sourceError;
-    if (amount > b.owed + 0.0001) return 'Repayment is greater than the total outstanding debt.';
+    if (amount > priorBalances.owed + 0.0001) return 'Repayment is greater than the total outstanding debt.'
+  }
+  if (tx.type === 'lend') {
+    return tx.method === 'cash' ? moneyTooLow(b.cash,'cash') : moneyTooLow(b.online,'online balance');
+  }
+  if (tx.type === 'lend_repay') {
+    const sourceError = tx.method === 'cash' ? moneyTooLow(b.cash,'cash') : moneyTooLow(b.online,'online balance');
+    if (sourceError) return sourceError;
+    if (amount > priorBalances.receivable + 0.0001) return 'Recovery is greater than the total outstanding lending.';
   }
   if (b.cash < -0.0001) return 'This change would make your cash balance negative.';
   if (b.online < -0.0001) return 'This change would make your online balance negative.';
@@ -360,7 +370,7 @@ export function WalletProvider({children}){
       const source=Array.isArray(rows)?rows.slice(0,remaining):[];
       const clean=source.map((tx,i)=>({...tx,id:tx.id||globalThis.crypto?.randomUUID?.()||`${Date.now()}-${i}`,amount:Number(tx.amount)||0,date:tx.date||todayISO()}));
       const valid=[],errors=[];
-      const validTypes=new Set(['salary','income_other','expense','transfer','withdraw','savings_add','savings_use','etransit_add','transport','borrow','repay']);
+      const validTypes=new Set(['salary','income_other','expense','transfer','withdraw','savings_add','savings_use','etransit_add','transport','borrow','repay','lend','lend_repay']);
       for(let i=0;i<clean.length;i++){
         const tx=clean[i];
         if(!validTypes.has(tx.type)){errors.push({row:i+1,error:`Unknown transaction type \"${tx.type}\".`,data:tx});continue;}
@@ -381,7 +391,7 @@ export function WalletProvider({children}){
     })):[];
     if(!clean.length)return {imported:0,errors:[]};
     const valid=[],errors=[];
-    const validTypes=new Set(['salary','income_other','expense','transfer','withdraw','savings_add','savings_use','etransit_add','transport','borrow','repay']);
+    const validTypes=new Set(['salary','income_other','expense','transfer','withdraw','savings_add','savings_use','etransit_add','transport','borrow','repay','lend','lend_repay']);
     for(let i=0;i<clean.length;i++){
       const tx=clean[i];
       const row=i+1;

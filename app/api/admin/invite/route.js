@@ -16,8 +16,8 @@ export async function POST(request) {
   const finalRole = ['user', 'editor', 'admin'].includes(role) ? role : 'user';
 
   const admin = supabaseAdmin();
-  const siteOrigin = origin || request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || '';
-  const redirectTo = `${siteOrigin}/auth/callback`;
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || origin || request.headers.get('origin') || '';
+  const redirectTo = `${siteOrigin}/auth/callback?flow=invite`;
 
   // Sends the user a Supabase invite email; they set their own password by
   // following the link. Their profiles row is created automatically by the

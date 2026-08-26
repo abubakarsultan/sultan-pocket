@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
-export const metadata = { title: 'Blog — Sultan Pocket' };
+export const metadata = { title: 'Blog — Sultan Pocket', description: 'Practical personal finance guides, budgeting tips, savings ideas and Sultan Pocket updates.', alternates: { canonical: 'https://sultanpocket.online/blog' }, openGraph: { title: 'Blog — Sultan Pocket', description: 'Practical personal finance guides and product updates.', url: 'https://sultanpocket.online/blog' } };
 export const revalidate = 30;
 
 async function getPosts() {

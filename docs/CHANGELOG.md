@@ -1,3 +1,12 @@
+## Current restored build — auth, lending, reports and blog hardening
+
+- Added dedicated Settings & Security page with password creation/change and global sign-out.
+- Google/invite accounts can create an email password; trusted password status is stored in profiles.
+- Invite links use an explicit invite flow and route to password creation.
+- Added lending: Lend Money + Receive Repayment, person-wise receivables and over-recovery protection.
+- Added Reports & Analytics with six-month trends, category breakdowns, debt and receivables.
+- Sanitized public blog HTML and improved article SEO/structured data.
+
 # Sultan Pocket — Project History
 
 Consolidated from the individual phase/setup notes that used to live in this

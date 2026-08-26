@@ -19,6 +19,9 @@ export default function AdminSeoPage() {
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true); setError(''); setNotice('');
+    if ((form.site_title || '').length > 70) { setError('Site title should be 70 characters or fewer.'); setSaving(false); return; }
+    if ((form.site_description || '').length > 170) { setError('Site description should be 170 characters or fewer.'); setSaving(false); return; }
+    if (form.og_image_url) { try { const u = new URL(form.og_image_url); if (u.protocol !== 'https:') throw new Error(); } catch { setError('Social preview image must be a valid HTTPS URL.'); setSaving(false); return; } }
     const { error } = await supabase
       .from('site_settings')
       .update({

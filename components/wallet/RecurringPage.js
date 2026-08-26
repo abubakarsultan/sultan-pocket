@@ -85,7 +85,7 @@ export default function RecurringPage(){
             {form.type==='expense'&&<option value="etransit">E-Transit Wallet</option>}
           </select>
         </label>}
-        {['borrow','repay'].includes(form.type)&&<label>Person
+        {['borrow','repay','lend','lend_repay'].includes(form.type)&&<label>Person
           <input value={form.person} onChange={e=>set('person',e.target.value)} placeholder="Person name"/>
         </label>}
         <label className="full">Notes

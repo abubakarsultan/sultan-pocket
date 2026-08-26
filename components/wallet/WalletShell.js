@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   ['/savings', '▱', 'Savings'],
   ['/debt', '◌', 'Debt & Borrowing'],
   ['/charts', '◒', 'Charts & Stats'],
+  ['/reports', '▤', 'Reports'],
   ['/recurring', '↻', 'Recurring']
 ];
 

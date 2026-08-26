@@ -91,8 +91,10 @@ export default function ResetPasswordPage() {
       const supabase = await getSupabase();
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
+      const { error: flagError } = await supabase.rpc('mark_password_set');
+      if (flagError) throw flagError;
 
-      setNotice('Password updated successfully. Redirecting to sign in…');
+      setNotice('Password created successfully. Redirecting to sign in…');
       await supabase.auth.signOut();
       window.setTimeout(() => router.replace('/signin'), 900);
     } catch (err) {
@@ -106,10 +108,10 @@ export default function ResetPasswordPage() {
     <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <form onSubmit={submit} className="card" style={{ width: '100%', maxWidth: 380 }}>
         <h1 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>
-          Choose a new password
+          Create your password
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', marginBottom: 20 }}>
-          Use a strong password you do not reuse elsewhere.
+          Create a strong password for email sign-in. You can use it alongside Google if your account was created with Google.
         </p>
 
         {checking && <div className="form-notice" style={{ display: 'block' }}>Checking your reset link…</div>}
@@ -141,7 +143,7 @@ export default function ResetPasswordPage() {
               />
             </div>
             <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-              {busy ? 'Updating…' : 'Update password'}
+              {busy ? 'Saving…' : 'Create password'}
             </button>
           </>
         )}

@@ -8,6 +8,7 @@ import RichTextEditor from '@/components/admin/RichTextEditor';
 
 const CATEGORIES = ['General', 'Budgeting', 'Savings', 'Debt', 'Guides', 'Product updates'];
 function slugify(text) { return text.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-'); }
+function isSafeHttpUrl(value) { if (!value) return true; try { const u = new URL(value); return u.protocol === 'https:'; } catch { return false; } }
 const emptyForm = { title: '', slug: '', excerpt: '', content: '', cover_image_url: '', category: 'General', meta_title: '', meta_description: '', published: false };
 
 export default function BlogEditorPage({ mode }) {
@@ -35,6 +36,9 @@ export default function BlogEditorPage({ mode }) {
   async function save(e) {
     e.preventDefault(); setError('');
     if (!form.title.trim() || !form.slug.trim() || !form.content.replace(/<[^>]*>/g, '').trim()) { setError('Title, slug, and content are required.'); return; }
+    if (!isSafeHttpUrl(form.cover_image_url.trim())) { setError('Cover image URL must be a valid HTTPS URL.'); return; }
+    if (form.meta_title.length > 70) { setError('SEO title should be 70 characters or fewer.'); return; }
+    if (form.meta_description.length > 170) { setError('SEO description should be 170 characters or fewer.'); return; }
     setBusy(true);
     const { data: auth } = await supabase.auth.getUser();
     const payload = { ...form, title: form.title.trim(), slug: form.slug.trim(), updated_at: new Date().toISOString() };

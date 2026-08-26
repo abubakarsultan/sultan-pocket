@@ -1,5 +1,6 @@
 import './globals.css';
 import './glass-ui.css';
+import { createClient } from '@supabase/supabase-js';
 import { AuthProvider } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -8,15 +9,31 @@ import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import Assistant from '@/components/assistant/Assistant';
 import PageTransition from '@/components/PageTransition';
 
-export const metadata = {
-  title: 'Sultan Pocket — Manage your money, your way',
-  description: 'Sultan Pocket helps you track expenses, plan budgets, and grow savings — all your personal finance tools in one place.',
-  metadataBase: new URL('https://sultanpocket.online'),
-  manifest: '/manifest.json',
-  icons: { icon: '/favicon.ico', shortcut: '/favicon.ico', apple: '/icon-192.png' },
-  robots: { index: true, follow: true },
-  openGraph: { title: 'Sultan Pocket', description: 'Track expenses, plan budgets, and grow savings — all in one place.', url: 'https://sultanpocket.online', siteName: 'Sultan Pocket', type: 'website' },
-};
+export async function generateMetadata() {
+  const fallback = {
+    title: 'Sultan Pocket — Manage your money, your way',
+    description: 'Sultan Pocket helps you track expenses, plan budgets, and grow savings — all your personal finance tools in one place.',
+    og_image_url: 'https://sultanpocket.online/icon-512.png',
+  };
+  let settings = fallback;
+  try {
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const { data } = await supabase.from('site_settings').select('site_title,site_description,og_image_url').eq('id', 1).maybeSingle();
+    if (data) settings = { ...fallback, site_title: data.site_title, site_description: data.site_description, og_image_url: data.og_image_url || fallback.og_image_url };
+  } catch {}
+  const title = settings.site_title || fallback.title;
+  const description = settings.site_description || fallback.description;
+  return {
+    title,
+    description,
+    metadataBase: new URL('https://sultanpocket.online'),
+    manifest: '/manifest.json',
+    icons: { icon: '/favicon.ico', shortcut: '/favicon.ico', apple: '/icon-192.png' },
+    robots: { index: true, follow: true },
+    openGraph: { title, description, url: 'https://sultanpocket.online', siteName: 'Sultan Pocket', type: 'website', images: [{ url: settings.og_image_url, alt: title }] },
+    twitter: { card: 'summary_large_image', title, description, images: [settings.og_image_url] },
+  };
+}
 
 export const viewport = {
   themeColor: [

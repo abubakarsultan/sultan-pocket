@@ -353,7 +353,9 @@ function DashboardInner() {
       'repay',
       'Repay Money',
       '↗'
-    ]
+    ],
+    ['lend', 'Lend Money', '↗'],
+    ['lend_repay', 'Receive Repayment', '↙']
   ];
 
   return (
@@ -2023,7 +2025,9 @@ function DebtInner() {
             'repay',
             'Repay Money',
             '↗'
-          ]
+          ],
+          ['lend', 'Lend Money', '↗'],
+          ['lend_repay', 'Receive Repayment', '↙']
         ]}
       />
 
@@ -2045,11 +2049,13 @@ function DebtInner() {
 
         <Card
           label="Repaid total"
-          value={money(
-            s.repaid
-          , currency)}
+          value={money(s.repaid, currency)}
           accent="var(--success)"
         />
+
+        <Card label="You are owed" value={money(b.receivable,currency)} sub="Outstanding lending" accent="var(--success)"/>
+
+        <Card label="Lent total" value={money(s.lent,currency)} sub={`Recovered ${money(s.recovered,currency)}`}/>
 
       </div>
 
@@ -2134,17 +2140,21 @@ function DebtInner() {
 
 
       <section className="wallet-panel">
+        <div className="wallet-panel-head"><h2>People who owe you</h2><span>{Object.keys(s.lendingByPerson).length} people</span></div>
+        {Object.entries(s.lendingByPerson).length ? <div className="debt-list">{Object.entries(s.lendingByPerson).map(([person,v])=><div className="debt-row" key={person}><div><strong>{person}</strong><span>Lent {money(v.lent,currency)} · Recovered {money(v.recovered,currency)}</span></div><b className="positive">{v.remaining?`${money(v.remaining,currency)} remaining`:'Paid'}</b></div>)}</div> : <div className="wallet-empty">No lending activity yet.</div>}
+      </section>
 
-        <h2>
-          Borrowing & repayments this month
-        </h2>
+      <section className="wallet-panel">
+        <h2>Borrowing & repayments this month</h2>
 
         <TxTable
           tx={s.tx
             .filter(
               t =>
                 t.type === 'borrow' ||
-                t.type === 'repay'
+                t.type === 'repay' ||
+                t.type === 'lend' ||
+                t.type === 'lend_repay'
             )
             .sort(
               (a, b) =>
@@ -2161,6 +2171,49 @@ function DebtInner() {
   );
 }
 
+
+/* =========================
+   REPORTS
+========================= */
+
+export function Reports() {
+  return <Page title="Reports & analytics"><ReportsInner /></Page>;
+}
+
+function ReportsInner() {
+  const { tx, month, s, currency } = useData();
+  const history = Array.from({length:6},(_,i)=>shiftMonth(month,i-5)).map(m=>({...stats(tx,m),month:m}));
+  const expenseRows = Object.entries(s.byCategory).sort((a,b)=>b[1]-a[1]);
+  const incomeRows = Object.entries(s.incomeByCategory).sort((a,b)=>b[1]-a[1]);
+  const maxIncome = Math.max(1,...history.map(x=>x.income));
+  const maxExpense = Math.max(1,...history.map(x=>x.expenses));
+  return <div className="reports-page">
+    <div className="wallet-grid four">
+      <Card label="Income" value={money(s.income,currency)} sub={monthLabel(month)} accent="var(--success)"/>
+      <Card label="Expenses" value={money(s.expenses,currency)} sub={monthLabel(month)} accent="var(--danger)"/>
+      <Card label="Net flow" value={money(s.net,currency)} sub="Income minus expenses"/>
+      <Card label="Savings added" value={money(s.savingsAdded,currency)} sub="This month" accent="var(--success)"/>
+    </div>
+    <section className="wallet-panel">
+      <div className="wallet-panel-head"><div><span className="wallet-section-kicker">SIX MONTH VIEW</span><h2>Income & spending trend</h2></div></div>
+      <div className="report-bars">{history.map(x=><div className="report-bar-col" key={x.month}><div className="report-bar-pair"><i style={{height:`${Math.max(4,(x.income/maxIncome)*120)}px`}} title={`Income ${money(x.income,currency)}`}/><em style={{height:`${Math.max(4,(x.expenses/maxExpense)*120)}px`} title={`Expenses ${money(x.expenses,currency)}`}/></div><span>{new Date(`${x.month}-01T00:00:00`).toLocaleString('en-US',{month:'short'})}</span></div>)}</div>
+      <div className="report-legend"><span><i className="income-dot"/>Income</span><span><i className="expense-dot"/>Expenses</span></div>
+    </section>
+    <div className="wallet-grid two">
+      <CategorySummary title="Expense categories" data={expenseRows} currency={currency}/>
+      <CategorySummary title="Income sources" data={incomeRows} positive currency={currency}/>
+    </div>
+    <div className="wallet-grid three">
+      <Card label="Transport" value={money(s.transport,currency)} sub="Expense category"/>
+      <Card label="Borrowed" value={money(s.borrowed,currency)} sub={`Repaid ${money(s.repaid,currency)}`}/>
+      <Card label="Lent" value={money(s.lent,currency)} sub={`Recovered ${money(s.recovered,currency)}`} />
+    </div>
+    <div className="wallet-grid two">
+      <section className="wallet-panel"><div className="wallet-panel-head"><h2>Outstanding debt</h2><span>{money(s.balances.owed,currency)}</span></div>{Object.entries(s.debtByPerson).length ? Object.entries(s.debtByPerson).map(([person,v])=><div className="report-row" key={person}><span>{person}</span><strong>{money(v.remaining,currency)}</strong></div>) : <div className="wallet-empty">No outstanding borrowing.</div>}</section>
+      <section className="wallet-panel"><div className="wallet-panel-head"><h2>Receivables</h2><span>{money(s.balances.receivable,currency)}</span></div>{Object.entries(s.lendingByPerson).length ? Object.entries(s.lendingByPerson).map(([person,v])=><div className="report-row" key={person}><span>{person}</span><strong>{money(v.remaining,currency)}</strong></div>) : <div className="wallet-empty">No outstanding lending.</div>}</section>
+    </div>
+  </div>;
+}
 
 /* =========================
    CHARTS

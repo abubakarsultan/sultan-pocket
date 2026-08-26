@@ -48,3 +48,7 @@ Supabase SQL Editor — see `supabase/README.md` for details.
 
 Deployed on Vercel from this repo. See `LAUNCH_CHECKLIST.md` for the
 remaining steps to publish the Android app to the Play Store.
+
+
+### Latest security/database migration
+Run `supabase/15_auth_security_and_integrity.sql` after migrations 01-14. It adds trusted password status, invite/email-password support, lending transaction types and integrity indexes.

@@ -3,7 +3,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {useWallet} from './WalletProvider';
 import {supabase} from '@/lib/supabaseClient';
-import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,firstDayOfMonth,debtSnapshot,money} from '@/lib/wallet/calc';
+import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,firstDayOfMonth,debtSnapshot,lendingSnapshot,money} from '@/lib/wallet/calc';
 
 const BASE={
   type:'expense',amount:'',date:todayISO(),category:'Food',method:'cash',
@@ -12,7 +12,7 @@ const BASE={
 const TITLES={
   income:'Income',expense:'Expense',transfer:'Cash ↔ Online Transfer',
   withdraw:'Withdraw Online → Cash',etransit_add:'Add to E-Transit',
-  savings_add:'Add Savings',savings_use:'Use Savings',borrow:'Borrow Money',repay:'Repay Money'
+  savings_add:'Add Savings',savings_use:'Use Savings',borrow:'Borrow Money',repay:'Repay Money',lend:'Lend Money',lend_repay:'Receive Repayment'
 };
 function normalizeType(t){return t==='income_other'||t==='salary'?'income':t;}
 
@@ -68,6 +68,7 @@ export default function WalletModal(){
   const custom=state?.customCategories||[];
   const categories=useMemo(()=>{const defaults=kind==='income'?DEFAULT_INCOME_CATEGORIES:DEFAULT_EXPENSE_CATEGORIES;const customForKind=custom.filter(c=>c.type===kind).map(c=>c.name);return [...new Set([...defaults,...customForKind])]},[custom,kind]);
   const outstandingPeople=useMemo(()=>{const tx=(state?.transactions||[]).filter(t=>t.id!==editingId);return debtSnapshot(tx)},[state,editingId]);
+  const lendingPeople=useMemo(()=>{const tx=(state?.transactions||[]).filter(t=>t.id!==editingId);return lendingSnapshot(tx)},[state,editingId]);
   if(!open)return null;
   const setField=(f,v)=>setForm(c=>({...c,[f]:v}));
   const close=()=>{
@@ -98,8 +99,9 @@ export default function WalletModal(){
 
   async function submit(e){
     e.preventDefault();setAttachmentError('');if(!form.amount||Number(form.amount)<=0){notify('Enter a valid amount.');return}
-    if((kind==='borrow'||kind==='repay')&&!String(form.person||'').trim()){notify('Enter the person name.');return}
+    if((kind==='borrow'||kind==='repay'||kind==='lend'||kind==='lend_repay')&&!String(form.person||'').trim()){notify('Enter the person name.');return}
     if(kind==='repay'){const person=String(form.person||'').trim();const remaining=outstandingPeople[person]?.remaining||0;if(!remaining){notify(`No outstanding debt found for ${person}.`);return}if(Number(form.amount)>remaining){notify(`Maximum repayment for ${person} is ${money(remaining,currency)}.`);return}}
+    if(kind==='lend_repay'){const person=String(form.person||'').trim();const remaining=lendingPeople[person]?.remaining||0;if(!remaining){notify(`No outstanding lending found for ${person}.`);return}if(Number(form.amount)>remaining){notify(`Maximum recovery for ${person} is ${money(remaining,currency)}.`);return}}
     if(isSavings&&form.goal_id===''){notify('Select a savings goal or General Savings.');return}
     setBusy(true);let tx={...form,amount:Number(form.amount),type:kind};
     if(kind==='income')tx={...tx,type:form.category==='Monthly Salary'?'salary':'income_other',source:form.category};
@@ -118,13 +120,13 @@ export default function WalletModal(){
     setBusy(false);if(ok){close();setAttachmentFile(null);setAttachmentRemove(false);setAttachmentError('')}
   }
 
-  const isExpense=kind==='expense';const isIncome=kind==='income';const isBorrow=kind==='borrow';const isRepay=kind==='repay';const isSavings=kind==='savings_add'||kind==='savings_use';const isTransfer=kind==='transfer'||kind==='withdraw';const isTransit=kind==='etransit_add';
+  const isExpense=kind==='expense';const isIncome=kind==='income';const isBorrow=kind==='borrow';const isRepay=kind==='repay';const isLend=kind==='lend';const isLendRepay=kind==='lend_repay';const isSavings=kind==='savings_add'||kind==='savings_use';const isTransfer=kind==='transfer'||kind==='withdraw';const isTransit=kind==='etransit_add';
   return <div className={`gate-backdrop ${closing ? "is-closing" : ""}`}><form className={`wallet-modal ${closing ? "is-closing" : ""}`} onSubmit={submit}><div className="wallet-modal-head"><div><span className="wallet-modal-kicker">{editingId?'EDIT TRANSACTION':'NEW TRANSACTION'}</span><h2>{TITLES[kind]||'Transaction'}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}>×</button></div><div className="wallet-form-grid">
     <label>Amount<input type="number" min="1" step="1" inputMode="decimal" value={form.amount} onChange={e=>setField('amount',e.target.value)} required autoFocus/></label>
     <label>Date<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)} required/></label>
     {(isExpense||isIncome)&&<><label>Category<select value={categories.includes(form.category)?form.category:''} onChange={e=>setField('category',e.target.value)} required><option value="" disabled>Select category</option>{categories.map(c=><option key={c} value={c}>{c}</option>)}</select><button type="button" className="inline-add" onClick={()=>document.getElementById('wallet-new-category')?.focus()}>+ Add category</button></label><label>Payment method<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option>{isExpense&&form.category==='Transport'&&<option value="etransit">E-Transit Wallet</option>}</select></label><label className="full category-helper">New {isIncome?'income':'expense'} category<div className="category-create"><input id="wallet-new-category" value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder={isIncome?'e.g. Freelance Income':'e.g. Medical'}/><button type="button" className="wallet-btn secondary" onClick={saveCategory}>Save category</button></div><small>This category will only appear in {isIncome?'Income':'Expense'} transactions.</small></label></>}
     {isExpense&&<label className="full">Merchant (optional)<input value={form.merchant||''} onChange={e=>setField('merchant',e.target.value)} placeholder="e.g. McDonald's"/></label>}
-    {(isBorrow||isRepay)&&<><label>Person<input value={form.person} onChange={e=>setField('person',e.target.value)} placeholder="Person name" required/></label><label>{isBorrow?'Receive into':'Repay from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>{isBorrow&&<label>Repayment required<select value={form.repayRequired?'yes':'no'} onChange={e=>setField('repayRequired',e.target.value==='yes')}><option value="yes">Yes</option><option value="no">No</option></select></label>}</>}
+    {(isBorrow||isRepay||isLend||isLendRepay)&&<><label>Person<input value={form.person} onChange={e=>setField('person',e.target.value)} placeholder="Person name" required/></label><label>{isBorrow?'Receive into':isLend?'Lend from':isLendRepay?'Receive into':'Repay from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>{isBorrow&&<label>Repayment required<select value={form.repayRequired?'yes':'no'} onChange={e=>setField('repayRequired',e.target.value==='yes')}><option value="yes">Yes</option><option value="no">No</option></select></label>}</>}
     {isSavings&&<><label>Savings category<select value={form.goal_id} onChange={e=>setField('goal_id',e.target.value)} required><option value="">Select savings goal</option><option value="general">General Savings</option>{goals.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>{kind==='savings_add'?'Save from':'Use from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label></>}
     {isTransit&&<label>Load from<select value={form.from} onChange={e=>setField('from',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>}
     {isTransfer&&<><label>{kind==='withdraw'?'Withdraw from':'Transfer from'}<select value={form.from} onChange={e=>setField('from',e.target.value)}>{kind==='withdraw'?<option value="online">Online</option>:<><option value="online">Online</option><option value="cash">Cash</option></>}</select></label>{kind==='transfer'&&<label>Transfer to<input value={form.from==='cash'?'Online':'Cash'} readOnly/></label>}</>}

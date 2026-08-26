@@ -32,6 +32,7 @@ function CallbackContent() {
       }
 
       const code = params.get('code');
+      const flow = params.get('flow');
 
       if (code) {
         const { error: e } = await supabase.auth.exchangeCodeForSession(code);
@@ -50,6 +51,11 @@ function CallbackContent() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         if (active) setError(userError?.message || 'Could not load your account.');
+        return;
+      }
+
+      if (flow === 'invite') {
+        if (active) router.replace('/reset-password?mode=invite');
         return;
       }
 
