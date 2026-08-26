@@ -2,6 +2,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import ScrollReveal from '@/components/ScrollReveal';
 import SpotlightCard from '@/components/SpotlightCard';
+import { getPageSeo, buildPageMetadata } from '@/lib/pageSeo';
+
+export const revalidate = 60;
+export async function generateMetadata() { return buildPageMetadata(await getPageSeo('/', { title: 'Sultan Pocket — Manage your money, your way.', description: 'Sultan Pocket helps you track expenses, plan budgets, and grow savings — all your personal finance tools in one place.' })); }
 
 const FEATURES = [
   { icon: '💳', title: 'Expense tracking', desc: 'Record everyday spending across cash, online payments, and transport in one organized wallet.', href: '/expense-tracker' },
@@ -44,8 +48,8 @@ export default function HomePage() {
 
           <div className="hero-visual" aria-label="Sultan Pocket wallet preview">
             <div className="preview-window">
-              <div className="preview-top"><span>WALLET OVERVIEW</span><span className="preview-dot">●</span></div>
-              <div className="preview-balance"><small>Available balance</small><strong>Rs. 48,250</strong><span>+ Rs. 60,000 income this month</span></div>
+              <div className="preview-top"><span>DEMO WALLET PREVIEW</span><span className="preview-dot">●</span></div>
+              <div className="preview-balance"><small>Sample data · Available balance</small><strong>Rs. 48,250</strong><span>+ Rs. 60,000 income this month</span></div>
               <div className="preview-cards">
                 <div><small>Cash</small><b>Rs. 18,750</b></div>
                 <div><small>Online</small><b>Rs. 29,500</b></div>

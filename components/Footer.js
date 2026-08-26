@@ -1,23 +1,22 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { createClient } from '@supabase/supabase-js';
 
-export default function Footer() {
-  return (
-    <footer style={{ borderTop: '1px solid var(--border)', marginTop: 60 }}>
-      <div className="container" style={{ padding: '28px 24px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>© {new Date().getFullYear()} Sultan Pocket. All rights reserved.</span>
-          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>Created by Abubakar Sultan</span>
-        </div>
-        <nav aria-label="Footer navigation" style={{ display: 'flex', gap: 18, fontSize: 13, color: 'var(--text-dim)' }}>
-          <Link href="/services" prefetch={false}>Features</Link>
-          <Link href="/about" prefetch={false}>About</Link>
-          <Link href="/blog" prefetch={false}>Blog</Link>
-          <Link href="/faq" prefetch={false}>FAQ</Link>
-          <Link href="/contact" prefetch={false}>Contact</Link>
-          <Link href="/privacy" prefetch={false}>Privacy</Link>
-          <Link href="/terms" prefetch={false}>Terms</Link>
-        </nav>
-      </div>
-    </footer>
-  );
+export default async function Footer() {
+  let social = {};
+  try {
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const { data } = await supabase.from('site_settings').select('instagram_url,facebook_url,x_url,linkedin_url').eq('id',1).maybeSingle();
+    social = data || {};
+  } catch {}
+  const socials = [['Instagram',social.instagram_url],['Facebook',social.facebook_url],['X',social.x_url],['LinkedIn',social.linkedin_url]].filter(([,url])=>url);
+  return <footer className="site-footer">
+    <div className="container footer-grid">
+      <div className="footer-brand-col"><Link href="/" className="footer-brand"><Image src="/logo.png" alt="Sultan Pocket" width={36} height={36} /><strong>Sultan Pocket</strong></Link><p>Personal finance, made simple. Track your money, understand your spending, and keep your wallet organized.</p><div className="footer-socials" aria-label="Social media">{socials.length ? socials.map(([label,url])=><a key={label} href={url} target="_blank" rel="noreferrer" aria-label={label}>{label}</a>) : <span className="footer-social-placeholder">Social links can be added from Admin → SEO</span>}</div></div>
+      <div className="footer-col"><h3>Product</h3><Link href="/services">Features</Link><Link href="/blog">Blog</Link><Link href="/faq">FAQ</Link></div>
+      <div className="footer-col"><h3>Company</h3><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
+      <div className="footer-col"><h3>Get started</h3><Link href="/signup">Create account</Link><Link href="/signin">Sign in</Link><Link href="/expense-tracker">Open wallet</Link></div>
+    </div>
+    <div className="container footer-bottom"><span>© {new Date().getFullYear()} Sultan Pocket. All rights reserved.</span><span>Created by Abubakar Sultan</span></div>
+  </footer>;
 }

@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import ScrollReveal from '@/components/ScrollReveal';
+import { getPageSeo, buildPageMetadata } from '@/lib/pageSeo';
 
-export const metadata = {
-  title: 'Features & Services — Sultan Pocket',
-  description: 'Explore Sultan Pocket tools for expenses, income, savings, transfers, borrowing, and personal money management.',
-};
+export const revalidate = 60;
+export async function generateMetadata() { return buildPageMetadata(await getPageSeo('/services', { title: 'Features & Services — Sultan Pocket', description: 'Explore Sultan Pocket tools for expenses, income, savings, transfers, borrowing, and personal money management.' })); }
 
 const services = [
   ['💳', 'Expense Tracking', 'Record everyday expenses by category and payment method so your spending history stays organized.', '/expense-tracker'],

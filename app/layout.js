@@ -1,5 +1,4 @@
 import './globals.css';
-import './glass-ui.css';
 import { createClient } from '@supabase/supabase-js';
 import { AuthProvider } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';

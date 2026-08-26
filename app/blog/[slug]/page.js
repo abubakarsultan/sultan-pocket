@@ -4,6 +4,8 @@ import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 export const revalidate = 30;
 
+function getReadTime(html = '') { const text = html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim(); const words = text ? text.split(/\s+/).length : 0; return Math.max(1, Math.ceil(words / 200)); }
+
 function getClient() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
@@ -74,7 +76,7 @@ export default async function BlogPostPage({ params }) {
       <article className="blog-article">
         <span className="blog-badge" style={{ marginBottom: 12, display: 'inline-block' }}>{post.category || 'General'}</span>
         <h1>{post.title}</h1>
-        <div className="blog-article-meta">Published {new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        <div className="blog-article-meta">Published {new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} · {getReadTime(post.content)} min read</div>
         {post.cover_image_url && <img className="blog-article-cover" src={post.cover_image_url} alt={post.title} />}
         <div className="blog-content" dangerouslySetInnerHTML={{ __html: safeContent }} />
       </article>

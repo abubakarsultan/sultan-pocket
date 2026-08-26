@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const CATEGORIES = ['General', 'Budgeting', 'Savings', 'Debt', 'Guides', 'Product updates'];
 function slugify(text) { return text.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-'); }
@@ -19,6 +22,8 @@ export default function BlogEditorPage({ mode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [slugTouched, setSlugTouched] = useState(mode === 'edit');
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverInputRef = useRef(null);
 
   useEffect(() => {
     if (mode !== 'edit') return;
@@ -32,6 +37,24 @@ export default function BlogEditorPage({ mode }) {
   }, [mode, params]);
 
   function update(key, value) { setForm(f => ({ ...f, [key]: value })); }
+
+  async function uploadCover(file) {
+    setError('');
+    if (!IMAGE_TYPES.includes(file.type)) { setError('Please choose a JPG, PNG, WEBP, or GIF image.'); return; }
+    if (file.size > MAX_IMAGE_SIZE) { setError('Cover image must be 10MB or smaller.'); return; }
+    setCoverUploading(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth?.user) throw new Error('Please sign in again.');
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const path = `blog/${auth.user.id}/cover-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from('blog-media').upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw error;
+      const { data } = supabase.storage.from('blog-media').getPublicUrl(path);
+      update('cover_image_url', data.publicUrl);
+    } catch (e) { setError(e.message || 'Could not upload cover image.'); }
+    finally { setCoverUploading(false); }
+  }
 
   async function save(e) {
     e.preventDefault(); setError('');
@@ -73,7 +96,9 @@ export default function BlogEditorPage({ mode }) {
           <div className="editor-settings-grid">
             <div className="field"><label>Excerpt</label><textarea value={form.excerpt} onChange={(e) => update('excerpt', e.target.value)} placeholder="Short summary shown on the blog page" /></div>
             <div className="field"><label>Category</label><select value={form.category} onChange={(e) => update('category', e.target.value)}>{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div className="field"><label>Cover image URL</label><input value={form.cover_image_url} onChange={(e) => update('cover_image_url', e.target.value)} placeholder="https://…" /></div>
+            <div className="field"><label>Feature / cover image</label><input value={form.cover_image_url} onChange={(e) => update('cover_image_url', e.target.value)} placeholder="https://…" />
+              <div className="image-source-row"><button type="button" className="btn" onClick={() => coverInputRef.current?.click()} disabled={coverUploading}>{coverUploading ? 'Uploading…' : 'Upload from device'}</button><input ref={coverInputRef} hidden type="file" accept={IMAGE_TYPES.join(',')} onChange={(e) => { const f=e.target.files?.[0]; if(f) uploadCover(f); e.target.value=''; }} /><span>or paste an HTTPS image URL above</span></div>
+              {form.cover_image_url && <div className="cover-preview-wrap"><img src={form.cover_image_url} alt="Cover preview" className="cover-preview" /><button type="button" className="btn" onClick={() => update('cover_image_url','')}>Remove</button></div>}</div>
             <div className="field"><label>SEO title</label><input value={form.meta_title} onChange={(e) => update('meta_title', e.target.value)} placeholder="Falls back to post title" /></div>
             <div className="field"><label>SEO description</label><textarea value={form.meta_description} onChange={(e) => update('meta_description', e.target.value)} placeholder="Falls back to excerpt" /></div>
           </div>

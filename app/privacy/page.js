@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { getPageSeo, buildPageMetadata } from '@/lib/pageSeo';
 
-export const metadata={title:'Privacy Policy — Sultan Pocket',description:'Privacy Policy for Sultan Pocket.'};
+export const revalidate = 60;
+export async function generateMetadata() { return buildPageMetadata(await getPageSeo('/privacy', { title: 'Privacy Policy — Sultan Pocket', description: 'Privacy Policy for Sultan Pocket.' })); }
 
 export default function PrivacyPage(){
  return <main className="container legal-page" style={{padding:'56px 24px 72px'}}>

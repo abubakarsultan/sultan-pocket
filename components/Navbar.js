@@ -1,51 +1,58 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { useAuth } from './AuthProvider';
 import ProfileMenu from './ProfileMenu';
 import ThemeToggle from './ThemeToggle';
-import { supabase } from '@/lib/supabaseClient';
+
+const LINKS = [
+  ['/', 'Home'], ['/services', 'Features'], ['/about', 'About'], ['/blog', 'Blog'], ['/faq', 'FAQ'], ['/contact', 'Contact'],
+];
 
 export default function Navbar() {
   const { user, loading } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', close);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', close); document.body.style.overflow = ''; };
+  }, [open]);
 
   return (
-    <header className="site-navbar" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 50 }}>
-      <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px' }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <Image
-            src="/logo.png"
-            alt="Sultan Pocket"
-            width={34}
-            height={34}
-            priority
-            style={{ width: 34, height: 34, objectFit: 'contain', borderRadius: 9 }}
-          />
-          <span style={{ fontWeight: 600, fontSize: 15 }}>Sultan Pocket</span>
+    <header className="site-navbar">
+      <div className="container site-navbar-inner">
+        <Link href="/" className="site-brand" onClick={() => setOpen(false)}>
+          <Image src="/logo.png" alt="Sultan Pocket" width={34} height={34} priority />
+          <span>Sultan Pocket</span>
         </Link>
-        <nav aria-label="Primary navigation" style={{ display: 'flex', gap: 22, fontSize: 13.5, color: 'var(--text-dim)' }} className="nav-links">
-          <Link href="/">Home</Link>
-          <Link href="/services" prefetch={false}>Features</Link>
-          <Link href="/about" prefetch={false}>About</Link>
-          <Link href="/blog" prefetch={false}>Blog</Link>
-          <Link href="/faq" prefetch={false}>FAQ</Link>
-          <Link href="/contact" prefetch={false}>Contact</Link>
+        <nav aria-label="Primary navigation" className="nav-links">
+          {LINKS.map(([href, label]) => <Link key={href} href={href} prefetch={false}>{label}</Link>)}
         </nav>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="site-navbar-actions">
           <ThemeToggle />
           {loading ? null : user ? (
-            <>
-              <Link href="/dashboard" className="btn btn-ghost">Dashboard</Link>
-              <ProfileMenu compact />
-            </>
+            <><Link href="/dashboard" className="btn btn-ghost desktop-auth-link">Dashboard</Link><ProfileMenu compact /></>
           ) : (
-            <>
-              <Link href="/signin" className="btn btn-ghost">Sign in</Link>
-              <Link href="/signup" className="btn btn-primary">Sign up</Link>
-            </>
+            <><Link href="/signin" className="btn btn-ghost desktop-auth-link">Sign in</Link><Link href="/signup" className="btn btn-primary desktop-auth-link">Sign up</Link></>
           )}
+          <button type="button" className="mobile-menu-btn" aria-label={open ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={open} onClick={() => setOpen(v => !v)}>
+            <span /><span /><span />
+          </button>
         </div>
       </div>
+      {open && <div className="mobile-nav-panel">
+        <nav aria-label="Mobile navigation">
+          {LINKS.map(([href, label]) => <Link key={href} href={href} prefetch={false} onClick={() => setOpen(false)}>{label}<span>→</span></Link>)}
+          {loading ? null : user ? <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard<span>→</span></Link> : <>
+            <Link href="/signin" onClick={() => setOpen(false)}>Sign in<span>→</span></Link>
+            <Link href="/signup" className="mobile-nav-primary" onClick={() => setOpen(false)}>Sign up<span>→</span></Link>
+          </>}
+        </nav>
+      </div>}
     </header>
   );
 }
