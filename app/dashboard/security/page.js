@@ -30,14 +30,36 @@ export default function SecurityPage() {
     if (newPassword.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (newPassword !== confirm) { setError('Passwords do not match.'); return; }
     setBusy(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-    if (!updateError) {
-      await supabase.rpc('mark_password_set');
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (sessionError || !accessToken) throw new Error('Your session has expired. Please sign in again.');
+
+      const response = await fetch('/api/account/password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Could not update your password.');
+
+      // Verify the password against the real Auth endpoint before reporting success.
+      const email = user.email;
+      if (!email) throw new Error('Your account has no email address for password sign-in.');
+      const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: newPassword });
+      if (verifyError) throw new Error('The password was saved, but email sign-in could not verify it. Please try creating it again.');
+
       setPasswordSet(true);
       setNewPassword(''); setConfirm('');
-      setNotice('Password updated successfully.');
-    } else setError(updateError.message || 'Could not update your password.');
-    setBusy(false);
+      setNotice('Password updated and verified. You can now sign in with your email and this password.');
+    } catch (err) {
+      setError(err?.message || 'Could not update your password.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function signOutEverywhere() {

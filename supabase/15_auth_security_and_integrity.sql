@@ -37,7 +37,7 @@ create or replace function public.resolve_auth_identifier(identifier text)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, auth
 as $$
 declare
   value text := lower(trim(identifier));
@@ -49,8 +49,8 @@ begin
   end if;
 
   if position('@' in value) > 1 then
-    select exists(select 1 from public.profiles where lower(email) = value),
-           coalesce((select p.password_set from public.profiles p where lower(p.email) = value limit 1), false)
+    select exists(select 1 from auth.users where lower(email) = value),
+           exists(select 1 from auth.users where lower(email) = value and coalesce(encrypted_password, '') <> '')
       into found, has_pw;
     return jsonb_build_object('registered', found, 'kind', 'email', 'has_password', has_pw);
   end if;
@@ -59,12 +59,11 @@ begin
            select 1 from auth.users u
            where lower(coalesce(u.raw_user_meta_data->>'username','')) = value
          ),
-         coalesce((
-           select p.password_set from public.profiles p
-           join auth.users u on u.id = p.id
+         exists(
+           select 1 from auth.users u
            where lower(coalesce(u.raw_user_meta_data->>'username','')) = value
-           limit 1
-         ), false)
+             and coalesce(u.encrypted_password, '') <> ''
+         )
     into found, has_pw;
   return jsonb_build_object('registered', found, 'kind', 'username', 'has_password', has_pw);
 end;
@@ -95,7 +94,10 @@ as $$
 declare p boolean;
 begin
   if auth.uid() is null then raise exception 'Not authenticated'; end if;
-  select password_set into p from public.profiles where id = auth.uid();
+  select exists(
+    select 1 from auth.users u
+    where u.id = auth.uid() and coalesce(u.encrypted_password, '') <> ''
+  ) into p;
   return jsonb_build_object('password_set', coalesce(p,false));
 end;
 $$;

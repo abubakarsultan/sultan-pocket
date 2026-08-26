@@ -89,10 +89,20 @@ export default function ResetPasswordPage() {
     setBusy(true);
     try {
       const supabase = await getSupabase();
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) throw updateError;
-      const { error: flagError } = await supabase.rpc('mark_password_set');
-      if (flagError) throw flagError;
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (sessionError || !accessToken) throw new Error('Your reset session is invalid or has expired. Request a new link.');
+
+      const response = await fetch('/api/account/password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to update your password.');
 
       setNotice('Password created successfully. Redirecting to sign in…');
       await supabase.auth.signOut();
