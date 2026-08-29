@@ -12,11 +12,6 @@ const LINKS = [
   ['/', 'Home'], ['/services', 'Features'], ['/about', 'About'], ['/blog', 'Blog'], ['/faq', 'FAQ'], ['/contact', 'Contact'],
 ];
 
-function isActive(pathname, href) {
-  if (href === '/') return pathname === '/';
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export default function Navbar() {
   const { user, loading } = useAuth();
   const pathname = usePathname();
@@ -34,20 +29,16 @@ export default function Navbar() {
     if (!open) return;
     const close = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', close);
-    const previousOverflow = document.body.style.overflow;
+    const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', close);
-      document.body.style.overflow = previousOverflow;
-    };
+    return () => { document.removeEventListener('keydown', close); document.body.style.overflow = previous; };
   }, [open]);
 
-  useEffect(() => setOpen(false), [pathname]);
+  const isActive = (href) => href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
-  async function mobileSignOut() {
-    await supabase.auth.signOut();
+  async function signOut() {
     setOpen(false);
-    window.location.href = '/signin';
+    await supabase.auth.signOut();
   }
 
   const meta = user?.user_metadata || {};
@@ -66,11 +57,7 @@ export default function Navbar() {
           <span>Sultan Pocket</span>
         </Link>
         <nav aria-label="Primary navigation" className="nav-links">
-          {LINKS.map(([href, label]) => (
-            <Link key={href} href={href} prefetch={false} className={isActive(pathname, href) ? 'active' : ''}>
-              {label}
-            </Link>
-          ))}
+          {LINKS.map(([href, label]) => <Link key={href} href={href} prefetch={false} className={isActive(href) ? 'active' : ''}>{label}</Link>)}
         </nav>
         <div className="site-navbar-actions">
           <ThemeToggle />
@@ -85,46 +72,28 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className={`mobile-nav-backdrop${open ? ' is-open' : ''}`} aria-hidden="true" onClick={() => setOpen(false)} />
+      {open && <div className="mobile-nav-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false); }} aria-hidden="true" />}
       <aside className={`mobile-nav-panel${open ? ' is-open' : ''}`} aria-label="Mobile navigation" aria-hidden={!open} inert={!open}>
-        <div className="mobile-nav-head">
-          <strong>Menu</strong>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Close navigation">×</button>
-        </div>
-        <nav className="mobile-nav-links">
-          {LINKS.map(([href, label]) => (
-            <Link key={href} href={href} prefetch={false} className={isActive(pathname, href) ? 'active' : ''} onClick={() => setOpen(false)}>
-              <span>{label}</span><span aria-hidden="true">→</span>
-            </Link>
-          ))}
+        <div className="mobile-nav-head"><strong>Menu</strong><button type="button" onClick={() => setOpen(false)} aria-label="Close menu">×</button></div>
+        <nav className="mobile-nav-primary-list">
+          {LINKS.map(([href, label]) => <Link key={href} href={href} prefetch={false} className={isActive(href) ? 'active' : ''} onClick={() => setOpen(false)}>{label}<span>→</span></Link>)}
         </nav>
-
         <div className="mobile-account-section">
           <div className="mobile-account-heading">ACCOUNT</div>
-          {loading ? null : user ? (
-            <>
-              <div className="mobile-account-user">
-                <span className="profile-avatar profile-avatar-lg">{avatar ? <img src={avatar} alt="" /> : initials}</span>
-                <div><strong>{fullName}</strong><small>Free plan</small></div>
-              </div>
-              <div className="mobile-account-links">
-                <Link href={editUrl} onClick={() => setOpen(false)}>Personalization <span>→</span></Link>
-                <Link href={profileUrl} onClick={() => setOpen(false)}>Profile <span>→</span></Link>
-                <Link href="/dashboard/security" onClick={() => setOpen(false)}>Settings & Security <span>→</span></Link>
-                <Link href="/faq" onClick={() => setOpen(false)}>Help <span>→</span></Link>
-              </div>
-              <button type="button" className="mobile-logout" onClick={mobileSignOut}>Log out <span>→</span></button>
-            </>
-          ) : (
-            <div className="mobile-auth-buttons">
-              <Link href="/signin" className="btn btn-ghost" onClick={() => setOpen(false)}>Sign in</Link>
-              <Link href="/signup" className="btn btn-primary" onClick={() => setOpen(false)}>Sign up</Link>
+          {loading ? null : user ? <>
+            <div className="mobile-account-user">
+              <span className="profile-avatar profile-avatar-lg">{avatar ? <img src={avatar} alt="" /> : initials}</span>
+              <div><strong>{fullName}</strong><span>Free plan</span></div>
             </div>
-          )}
-          <div className="mobile-theme-row">
-            <span><strong>Appearance</strong><small>Light / dark mode</small></span>
-            <ThemeToggle />
-          </div>
+            <div className="mobile-account-links">
+              <Link href={editUrl} onClick={() => setOpen(false)}>Personalization <span>→</span></Link>
+              <Link href={profileUrl} onClick={() => setOpen(false)}>Profile <span>→</span></Link>
+              <Link href="/dashboard/security" onClick={() => setOpen(false)}>Settings &amp; Security <span>→</span></Link>
+              <Link href="/faq" onClick={() => setOpen(false)}>Help <span>→</span></Link>
+              <button type="button" onClick={signOut}>Log out <span>↪</span></button>
+            </div>
+          </> : <div className="mobile-auth-actions"><Link href="/signin" className="btn btn-ghost" onClick={() => setOpen(false)}>Sign in</Link><Link href="/signup" className="btn btn-primary" onClick={() => setOpen(false)}>Sign up</Link></div>}
+          <div className="mobile-theme-row"><span>Appearance</span><ThemeToggle /></div>
         </div>
       </aside>
     </header>

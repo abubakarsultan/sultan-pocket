@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
 import AnimatedMoney from './AnimatedNumber';
@@ -121,6 +121,9 @@ function actionDescription(kind) {
   return d[kind] || 'Add a transaction';
 }
 
+
+const CATEGORY_ICONS = { Food:'🍔', Transport:'🚌', Bills:'💡', Shopping:'🛍️', Groceries:'🛒', Entertainment:'🎬', Health:'❤️', Education:'📚', Rent:'🏠', Utilities:'💡', Salary:'💰', 'Monthly Salary':'💰', Freelance:'💼', Other:'📌' };
+function categoryIcon(name){ return CATEGORY_ICONS[String(name||'')] || '📌'; }
 
 /* =========================
    CARD
@@ -287,9 +290,11 @@ function DashboardInner() {
     state
   } = useData();
 
-  const {basePath}=useWallet();
-  const [mobileTab,setMobileTab]=useState('overview');
-  const mobileSwipeStart=useRef(null);
+  const {basePath,setMonth}=useWallet();
+  const [mobileTab, setMobileTab] = useState('overview');
+  const monthSwipeStart = useRef(null);
+  const handleMonthTouchStart = (e) => { if (e.target.closest?.('.wallet-balance-strip')) return; const t=e.touches?.[0]; if(t) monthSwipeStart.current={x:t.clientX,y:t.clientY}; };
+  const handleMonthTouchEnd = (e) => { const start=monthSwipeStart.current; monthSwipeStart.current=null; const t=e.changedTouches?.[0]; if(!start||!t) return; const dx=t.clientX-start.x, dy=t.clientY-start.y; if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.3) setMonth(shiftMonth(month,dx<0?1:-1)); };
 
   const recent = tx
     .slice()
@@ -360,58 +365,26 @@ function DashboardInner() {
     ['lend_repay', 'Receive Repayment', '↙']
   ];
 
-  const handleDashboardTouchStart=(e)=>{ mobileSwipeStart.current=e.touches[0]; };
-  const handleDashboardTouchEnd=(e)=>{
-    if(!mobileSwipeStart.current)return;
-    const end=e.changedTouches[0];
-    const dx=end.clientX-mobileSwipeStart.current.clientX;
-    const dy=end.clientY-mobileSwipeStart.current.clientY;
-    mobileSwipeStart.current=null;
-    if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)+12) setMonth(shiftMonth(month,dx<0?1:-1));
-  };
-
   return (
-    <div className="wallet-dashboard-mobile-swipe-area" onTouchStart={handleDashboardTouchStart} onTouchEnd={handleDashboardTouchEnd}>
+    <div className="wallet-dashboard-page" onTouchStart={handleMonthTouchStart} onTouchEnd={handleMonthTouchEnd}>
 
-      <div className="mobile-dashboard-tabs" role="tablist" aria-label="Dashboard sections">
-        {[['overview','Overview'],['income','Income'],['expenses','Expenses']].map(([value,label])=><button key={value} type="button" role="tab" aria-selected={mobileTab===value} className={mobileTab===value?'active':''} onClick={()=>setMobileTab(value)}>{label}</button>)}
-      </div>
-
-      <div className={mobileTab==='overview'?'mobile-dashboard-balances':'mobile-tab-hidden'}>
-        <div className="mobile-balance-hero"><small>Available Balance</small><strong>{money(b.available,currency)}</strong><span>Cash + Online · {monthLabel(month)}</span></div>
-        <div className="mobile-balance-strip">
-          {[['Cash',b.cash,'Physical cash'],['Online',b.online,'Bank / digital'],['Savings',b.savings,'Money set aside'],['E-Transit',b.etransit,'Transport balance']].map(([label,value,sub])=><div className="mobile-balance-card" key={label}><small>{label}</small><strong>{money(value,currency)}</strong><span>{sub}</span></div>)}
-        </div>
-      </div>
-
-      <div className={mobileTab==='overview'?'':'mobile-tab-hidden'}>
-      <Actions items={actions} />
-
-      <UpcomingRecurring
-        rules={state?.recurringRules||[]}
-        transactions={tx}
-        add={add}
-        currency={currency}
-        user={user}
-        basePath={basePath}
-      />
-
-      <div className="wallet-grid four desktop-dashboard-balances">
+      <div className="wallet-dashboard-desktop-balance">
+      <div className="wallet-grid four">
 
         <Card
-          label="Available spending"
+          label="Available Balance"
           value={money(b.available, currency)}
           sub="Cash + online"
         />
 
         <Card
-          label="Cash balance"
+          label="Cash"
           value={money(b.cash, currency)}
           sub="Physical cash"
         />
 
         <Card
-          label="Online balance"
+          label="Online"
           value={money(b.online, currency)}
           sub="Bank / digital"
         />
@@ -424,7 +397,7 @@ function DashboardInner() {
         />
 
         <Card
-          label="E-Transit wallet"
+          label="E-Transit"
           value={money(b.etransit, currency)}
           sub="Transport balance"
           accent="#8656C4"
@@ -451,9 +424,38 @@ function DashboardInner() {
         />
 
       </div>
+
       </div>
 
-      <div className={mobileTab==='overview'?'':'mobile-tab-hidden'}>
+      <div className="wallet-dashboard-actions"><Actions items={actions} /></div>
+
+      <UpcomingRecurring
+        rules={state?.recurringRules||[]}
+        transactions={tx}
+        add={add}
+        currency={currency}
+        user={user}
+        basePath={basePath}
+      />
+
+      <section className="wallet-mobile-balance" aria-label="Wallet balances">
+        <div className="wallet-mobile-balance-hero"><span>AVAILABLE BALANCE</span><strong>{money(b.available, currency)}</strong><small>Cash + Online · {monthLabel(month)}</small></div>
+        <div className="wallet-balance-strip">
+          {[['Cash', b.cash, 'Physical cash', 'var(--signal)'], ['Online', b.online, 'Bank / digital', 'var(--signal)'], ['Savings', b.savings, 'Money set aside', 'var(--success)'], ['E-Transit', b.etransit, 'Transport balance', '#8656C4']].map(([label,value,sub,accent]) => <div className="wallet-balance-strip-card" key={label} style={{'--balance-accent':accent}}><span>{label}</span><strong>{money(value,currency)}</strong><small>{sub}</small></div>)}
+        </div>
+      </section>
+
+      <section className="wallet-mobile-dashboard">
+        <div className="wallet-mobile-dashboard-tabs" role="tablist" aria-label="Dashboard sections">
+          {['overview','income','expenses'].map(tab => <button key={tab} type="button" role="tab" aria-selected={mobileTab===tab} className={mobileTab===tab?'active':''} onClick={()=>setMobileTab(tab)}>{tab[0].toUpperCase()+tab.slice(1)}</button>)}
+        </div>
+        {mobileTab==='overview' && <div className="wallet-mobile-tab-content"><MonthlySummary transactions={tx} month={month} currency={currency} /><section className="wallet-panel"><div className="wallet-panel-head"><div><span className="wallet-section-kicker">RECENT ACTIVITY</span><h2>Recent transactions</h2></div><Link className="wallet-text-link" href={`${basePath}/transactions`}>View all →</Link></div><TxTable tx={recent} empty="No transactions yet." /></section></div>}
+        {mobileTab==='income' && <div className="wallet-mobile-tab-content"><section className="wallet-panel"><div className="wallet-panel-head"><div><span className="wallet-section-kicker">INCOME</span><h2>{monthLabel(month)}</h2></div><span className="positive">{money(s.income,currency)}</span></div><div className="metric-list"><div><span>Income</span><b className="positive">{money(s.income,currency)}</b></div><div><span>Opening balance</span><b>{money(s.openingBalances.total,currency)}</b></div><div><span>Net cash flow</span><b className={s.net>=0?'positive':'negative'}>{money(s.net,currency)}</b></div></div></section><CategorySummary title="Income breakdown" data={incomeCats} positive currency={currency} /></div>}
+        {mobileTab==='expenses' && <div className="wallet-mobile-tab-content"><section className="wallet-panel"><div className="wallet-panel-head"><div><span className="wallet-section-kicker">EXPENSES</span><h2>{monthLabel(month)}</h2></div><span className="negative">{money(s.expenses,currency)}</span></div><div className="metric-list"><div><span>Expenses</span><b className="negative">{money(s.expenses,currency)}</b></div><div><span>Transport</span><b>{money(s.transport,currency)}</b></div><div><span>Savings added</span><b>{money(s.savingsAdded,currency)}</b></div></div></section><CategorySummary title="Expense breakdown" data={expenseCats} currency={currency} /></div>}
+      </section>
+
+      <div className="wallet-dashboard-desktop-content">
+
       <MonthlySummary transactions={tx} month={month} currency={currency} />
 
       <div className="wallet-grid two">
@@ -594,7 +596,7 @@ function DashboardInner() {
       </div>
 
 
-      <div className="wallet-grid two desktop-dashboard-category-summary">
+      <div className="wallet-grid two">
 
         <CategorySummary
           title="Income breakdown"
@@ -662,16 +664,7 @@ function DashboardInner() {
         </div>
 
       </section>
-      </div>
 
-      <div className={mobileTab==='income'?'':'mobile-tab-hidden'}>
-        <section className="wallet-panel mobile-tab-summary"><div className="wallet-panel-head"><div><span className="wallet-section-kicker">THIS MONTH</span><h2>Income</h2></div><strong className="positive">{money(s.income,currency)}</strong></div></section>
-        <CategorySummary title="Income breakdown" data={incomeCats} positive currency={currency} />
-      </div>
-
-      <div className={mobileTab==='expenses'?'':'mobile-tab-hidden'}>
-        <section className="wallet-panel mobile-tab-summary"><div className="wallet-panel-head"><div><span className="wallet-section-kicker">THIS MONTH</span><h2>Expenses</h2></div><strong className="negative">{money(s.expenses,currency)}</strong></div></section>
-        <CategorySummary title="Expense breakdown" data={expenseCats} currency={currency} />
       </div>
 
     </div>
@@ -742,7 +735,7 @@ function CategorySummary({
           >
 
             <div>
-              <span><span className="mobile-category-icon" aria-hidden="true">{categoryIcon(k)}</span>{k}</span>
+              <span><span className="mobile-category-icon">{categoryIcon(k)}</span>{k}</span>
 
               <b
                 className={
@@ -820,23 +813,11 @@ function TransactionsInner() {
   const [filterMonth, setFilterMonth] =
     useState('all');
 
-  const [filterOpen, setFilterOpen] = useState(false);
-
   const [importRows,setImportRows]=useState([]);
   const [importErrors,setImportErrors]=useState([]);
   const [importFileName,setImportFileName]=useState('');
   const [importBusy,setImportBusy]=useState(false);
-
-  useEffect(()=>{
-    if(!filterOpen)return;
-    const close=(e)=>{if(e.key==='Escape')setFilterOpen(false)};
-    document.addEventListener('keydown',close);
-    const previous=document.body.style.overflow;
-    document.body.style.overflow='hidden';
-    return()=>{document.removeEventListener('keydown',close);document.body.style.overflow=previous};
-  },[filterOpen]);
-
-  const activeFilterCount=[filterMonth!=='all',type!=='all',category!=='all',method!=='all',Boolean(person.trim()),Boolean(search.trim())].filter(Boolean).length;
+  const [filtersOpen,setFiltersOpen]=useState(false);
 
   const categories = [
     ...new Set(
@@ -982,10 +963,6 @@ function TransactionsInner() {
             {filtered.length} shown
           </span>
 
-          <button type="button" className="wallet-btn secondary mobile-filter-trigger" onClick={()=>setFilterOpen(true)} aria-expanded={filterOpen}>
-            Filters{activeFilterCount>0&&<span className="mobile-filter-badge">{activeFilterCount}</span>}
-          </button>
-
           <>
             <button
               className="wallet-btn export-btn"
@@ -1014,7 +991,9 @@ function TransactionsInner() {
         {importRows.length>0&&<button className="wallet-btn primary" onClick={confirmImport} disabled={importBusy}>{importBusy?'Importing…':`Confirm import (${importRows.length})`}</button>}
       </div>}
 
-      <div className="wallet-filters desktop-filter-row">
+      <button type="button" className="wallet-mobile-filter-button" onClick={()=>setFiltersOpen(true)}>Filters {(() => { const count=[filterMonth!=='all',type!=='all',category!=='all',method!=='all',!!person.trim(),!!search.trim()].filter(Boolean).length; return count ? <b>{count}</b> : null; })()}</button>
+
+      <div className="wallet-filters">
 
         <input
           placeholder="Search transactions…"
@@ -1133,19 +1112,7 @@ function TransactionsInner() {
       </div>
 
 
-      <div className={`wallet-mobile-filter-backdrop${filterOpen ? ' is-open' : ''}`} aria-hidden="true" onClick={()=>setFilterOpen(false)} />
-      <aside className={`wallet-mobile-filter-sheet${filterOpen ? ' is-open' : ''}`} aria-label="Transaction filters" aria-hidden={!filterOpen} inert={!filterOpen}>
-        <div className="wallet-mobile-filter-head"><strong>Filters</strong><button type="button" onClick={()=>setFilterOpen(false)} aria-label="Close filters">×</button></div>
-        <div className="wallet-mobile-filter-grid">
-          <label>Search<input placeholder="Search transactions…" value={search} onChange={e=>setSearch(e.target.value)} /></label>
-          <label>Month<select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)}><option value="all">All months</option>{months.map(m=><option key={m} value={m}>{monthLabel(m)}</option>)}</select></label>
-          <label>Type<select value={type} onChange={e=>setType(e.target.value)}><option value="all">All types</option>{types.map(t=><option key={t} value={t}>{transactionLabel({type:t})}</option>)}</select></label>
-          <label>Category<select value={category} onChange={e=>setCategory(e.target.value)}><option value="all">All categories</option>{categories.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
-          <label>Method<select value={method} onChange={e=>setMethod(e.target.value)}><option value="all">All methods</option><option value="cash">Cash</option><option value="online">Online</option><option value="etransit">E-Transit Wallet</option></select></label>
-          <label>Person<input placeholder="Filter by person" value={person} onChange={e=>setPerson(e.target.value)} /></label>
-        </div>
-        <div className="wallet-mobile-filter-actions"><button type="button" className="wallet-btn secondary" onClick={reset}>Reset</button><button type="button" className="wallet-btn primary" onClick={()=>setFilterOpen(false)}>Apply filters</button></div>
-      </aside>
+      {filtersOpen && <div className="wallet-filter-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setFiltersOpen(false)}}><section className="wallet-filter-sheet" role="dialog" aria-modal="true" aria-label="Transaction filters"><div className="wallet-filter-sheet-head"><strong>Filters</strong><button type="button" onClick={()=>setFiltersOpen(false)} aria-label="Close filters">×</button></div><div className="wallet-filter-sheet-body"><label>Search<input placeholder="Search transactions…" value={search} onChange={e=>setSearch(e.target.value)}/></label><label>Month<select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)}><option value="all">All months</option>{months.map(m=><option key={m} value={m}>{monthLabel(m)}</option>)}</select></label><label>Type<select value={type} onChange={e=>setType(e.target.value)}><option value="all">All types</option>{types.map(t=><option key={t} value={t}>{transactionLabel({type:t})}</option>)}</select></label><label>Category<select value={category} onChange={e=>setCategory(e.target.value)}><option value="all">All categories</option>{categories.map(c=><option key={c} value={c}>{categoryIcon(c)} {c}</option>)}</select></label><label>Method<select value={method} onChange={e=>setMethod(e.target.value)}><option value="all">All methods</option><option value="cash">Cash</option><option value="online">Online</option><option value="etransit">E-Transit Wallet</option></select></label><label>Person<input placeholder="Filter by person" value={person} onChange={e=>setPerson(e.target.value)}/></label></div><div className="wallet-filter-sheet-foot"><button type="button" className="wallet-btn secondary" onClick={reset}>Reset</button><button type="button" className="wallet-btn primary" onClick={()=>setFiltersOpen(false)}>Apply filters</button></div></section></div>}
 
       {!user && (
         <div className="wallet-readonly-note">
@@ -1226,7 +1193,7 @@ function SwipeTransactionCard({transaction:t,index,user,guest,currency,onViewAtt
       <div className="wallet-mobile-tx-main">
         <div>
           <strong>
-            {t.category ? <><span className="mobile-category-icon" aria-hidden="true">{categoryIcon(t.category)}</span>{t.category}</> : (t.source||t.person||t.notes||'Transaction')}
+            <span className="mobile-category-icon">{categoryIcon(t.category||t.source)}</span>{t.category||t.source||t.person||t.notes||'Transaction'}
             {t.attachment_path && <button type="button" className="attachment-button mobile-attachment-button" onClick={(e)=>{e.stopPropagation();onViewAttachment(t)}} title="View receipt" aria-label="View receipt">📎</button>}
           </strong>
           {t.person && <small>{t.person}</small>}
@@ -1341,7 +1308,6 @@ function TxTable({
 
                 <td>
 
-                  {t.category && <span className="mobile-category-icon" aria-hidden="true">{categoryIcon(t.category)}</span>}
                   {t.category ||
                     t.source ||
                     t.person ||
@@ -1690,9 +1656,6 @@ function parseCSVText(text){
   if(cell!==''||row.length){row.push(cell);if(row.some(v=>v!==''))rows.push(row);}
   return rows;
 }
-
-const CATEGORY_ICONS = {Food:'🍔',Transport:'🚌',Bills:'💡',Shopping:'🛍️',Health:'🩺',Medical:'🩺',Education:'📚',Entertainment:'🎬',Rent:'🏠',Groceries:'🛒',Fuel:'⛽',Travel:'✈️','Monthly Salary':'💼',Salary:'💼',Freelance:'💻',Gifts:'🎁',Other:'📦'};
-function categoryIcon(name){return CATEGORY_ICONS[name] || (String(name||'').toLowerCase().includes('transport') ? '🚌' : '📁');}
 
 function displayMethod(method) {
 

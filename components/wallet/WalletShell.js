@@ -39,15 +39,6 @@ export default function WalletShell({
   }, []);
 
   useEffect(() => {
-    if (!moreOpen) return;
-    const onKey = (e) => { if (e.key === 'Escape') setMoreOpen(false); };
-    document.addEventListener('keydown', onKey);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = previousOverflow; };
-  }, [moreOpen]);
-
-  useEffect(() => {
     const open = () => { setGateReason('guest'); setGate(true); };
     const openLimit = () => { setGateReason('limit'); setGate(true); };
 
@@ -206,47 +197,22 @@ export default function WalletShell({
         </main>
 
 
-        <button
-          type="button"
-          className="wallet-mobile-fab"
-          aria-label="Add expense"
-          onClick={() =>
-            protectedAction(() =>
-              window.dispatchEvent(
-                new CustomEvent('wallet:add', { detail: 'expense' })
-              )
-            )
-          }
-        >
-          +
-        </button>
-
         {/* Mobile navigation */}
         <nav className="wallet-mobile-nav" aria-label="Wallet navigation">
-          <Link className={p === `${basePath}` ? 'active' : ''} href={basePath}>
-            <i aria-hidden="true">▦</i><span>Home</span>
-          </Link>
-          <Link className={p.startsWith(`${basePath}/transactions`) ? 'active' : ''} href={`${basePath}/transactions`}>
-            <i aria-hidden="true">↔</i><span>Transactions</span>
-          </Link>
-          <button type="button" className="wallet-mobile-add" aria-label="Add transaction" onClick={() => protectedAction(() => window.dispatchEvent(new CustomEvent('wallet:add', { detail: 'expense' })))}>
-            <i aria-hidden="true">+</i><span>Add</span>
-          </button>
-          <button type="button" className={`wallet-mobile-more-btn${moreOpen ? ' wallet-mobile-more-active' : ''}`} onClick={() => setMoreOpen(true)} aria-expanded={moreOpen}>
-            <i aria-hidden="true">•••</i><span>More</span>
-          </button>
+          <Link className={p === `${basePath}` ? 'active' : ''} href={basePath}><i aria-hidden="true">▦</i><span>Home</span></Link>
+          <Link className={p === `${basePath}/transactions` ? 'active' : ''} href={`${basePath}/transactions`}><i aria-hidden="true">↔</i><span>Transactions</span></Link>
+          <button type="button" className="wallet-mobile-more-btn" onClick={() => setMoreOpen(true)}><i aria-hidden="true">•••</i><span>More</span></button>
+          <button type="button" className="wallet-mobile-add-btn" aria-label="Add transaction" onClick={() => protectedAction(() => window.dispatchEvent(new CustomEvent('wallet:add', { detail: 'expense' })))}><i aria-hidden="true">+</i><span>Add</span></button>
         </nav>
 
-        <div className={`wallet-mobile-more-backdrop${moreOpen ? ' is-open' : ''}`} aria-hidden="true" onClick={() => setMoreOpen(false)} />
-        <aside className={`wallet-mobile-more-sheet${moreOpen ? ' is-open' : ''}`} aria-label="More wallet tools" aria-hidden={!moreOpen} inert={!moreOpen}>
-          <div className="wallet-mobile-more-handle" />
-          <h2>More tools</h2>
-          <div className="wallet-more-grid">
-            {NAV.filter(([, , label]) => label !== 'Dashboard' && label !== 'Transactions').map(([href, ic, label]) => (
-              <Link key={href} href={href} onClick={() => setMoreOpen(false)}><i>{ic}</i><span>{label === 'Debt & Borrowing' ? 'Debt' : label === 'Charts & Stats' ? 'Charts' : label}</span></Link>
-            ))}
-          </div>
-        </aside>
+        {moreOpen && <div className="wallet-more-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setMoreOpen(false); }}>
+          <section className="wallet-more-sheet" role="dialog" aria-modal="true" aria-label="More wallet tools">
+            <div className="wallet-more-head"><strong>More</strong><button type="button" onClick={() => setMoreOpen(false)} aria-label="Close">×</button></div>
+            <div className="wallet-more-grid">
+              {NAV.slice(2).map(([href, ic, label]) => <Link key={href} href={href} onClick={() => setMoreOpen(false)}><i>{ic}</i><span>{label}</span><b>→</b></Link>)}
+            </div>
+          </section>
+        </div>}
 
       </section>
 

@@ -1,0 +1,8 @@
+'use client';
+import {motion,useReducedMotion} from 'framer-motion';
+import AnimatedNumber from '@/components/wallet/AnimatedNumber';
+export default function AnimatedProductPreview(){
+ const reduce=useReducedMotion();
+ const row={initial:{opacity:0,y:14},animate:{opacity:1,y:0},transition:{duration:.35,ease:'easeOut'}};
+ return <div className="hero-visual" aria-label="Sultan Pocket wallet preview"><motion.div className="preview-window" initial={reduce?false:{opacity:0,y:30,scale:.97}} animate={reduce?undefined:{opacity:1,y:0,scale:1}} transition={{duration:.65,ease:[.22,1,.36,1]}}><div className="preview-top"><span>DEMO WALLET PREVIEW</span><span className="preview-dot">●</span></div><div className="preview-balance"><small>Sample data · Available balance</small><strong><AnimatedNumber value={48250} prefix="Rs. " /></strong><span>+ Rs. 60,000 income this month</span></div><div className="preview-cards"><motion.div {...row} transition={{...row.transition,delay:.15}}><small>Cash</small><b>Rs. 18,750</b></motion.div><motion.div {...row} transition={{...row.transition,delay:.22}}><small>Online</small><b>Rs. 29,500</b></motion.div></div><div className="preview-list">{[['expense','−','Food','Today · Cash','− Rs. 850'],['income','+','Monthly Salary','Aug 1 · Online','+ Rs. 60,000'],['save','↗','Savings','Aug 5 · Cash','− Rs. 10,000']].map(([kind,icon,title,sub,amount],i)=><motion.div key={title} {...row} transition={{...row.transition,delay:.3+i*.09}}><span className={`preview-icon ${kind}`}>{icon}</span><span><b>{title}</b><small>{sub}</small></span><strong>{amount}</strong></motion.div>)}</div></motion.div></div>;
+}

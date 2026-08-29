@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import ScrollReveal from '@/components/ScrollReveal';
+import AnimatedProductPreview from '@/components/home/AnimatedProductPreview';
+import BentoFeatures from '@/components/home/BentoFeatures';
+import AnimatedSteps from '@/components/home/AnimatedSteps';
 import { getPageSeo, buildPageMetadata } from '@/lib/pageSeo';
-import { BentoFeatures, HeroPreview, Reveal, HowItWorks } from '@/components/home/LandingAnimations';
 
 export const revalidate = 60;
 export async function generateMetadata() { return buildPageMetadata(await getPageSeo('/', { title: 'Sultan Pocket — Manage your money, your way.', description: 'Sultan Pocket helps you track expenses, plan budgets, and grow savings — all your personal finance tools in one place.' })); }
@@ -32,62 +34,63 @@ const FAQS = [
 export default function HomePage() {
   return (
     <main>
-      <section className="hero-section">
+      <ScrollReveal as="section" className="hero-section">
         <div className="hero-gradient-blobs" aria-hidden="true"><span className="hero-blob hero-blob-one" /><span className="hero-blob hero-blob-two" /><span className="hero-blob hero-blob-three" /></div>
         <div className="container hero-grid">
-          <Reveal className="hero-copy">
+          <div className="hero-copy">
             <div className="eyebrow"><Image src="/logo.png" alt="" width={28} height={28} /> Personal finance, made simple</div>
             <h1>Manage your money,<br /><span>your way.</span></h1>
             <p>Track expenses, record income, manage savings, and understand your monthly money flow — all from one simple personal wallet.</p>
-            <div className="hero-actions"><Link href="/signup" className="btn btn-primary hero-btn">Get started free →</Link><Link href="/expense-tracker" className="btn hero-btn-secondary">Open expense tracker</Link></div>
+            <div className="hero-actions">
+              <Link href="/signup" className="btn btn-primary hero-btn">Get started free →</Link>
+              <Link href="/expense-tracker" className="btn hero-btn-secondary">Open expense tracker</Link>
+            </div>
             <div className="hero-trust"><span>✓ Cash & Online</span><span>✓ Savings</span><span>✓ Monthly tracking</span></div>
-          </Reveal>
-          <div className="hero-visual" aria-label="Sultan Pocket wallet preview"><HeroPreview /></div>
+          </div>
+
+          <AnimatedProductPreview />
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="section-block section-muted problem-section">
-        <Reveal>
-          <div className="container split-section">
-            <div><span className="section-label">THE PROBLEM</span><h2>Know your balance before the month knows you.</h2><p>Money gets difficult to manage when cash, online spending, savings, and everyday purchases live in different places. Sultan Pocket gives every transaction a place so your month is easier to understand.</p></div>
-            <div className="benefit-list"><div><b>01</b><span><strong>Separate money clearly</strong><small>Cash, Online, Savings and E-Transit stay easy to understand.</small></span></div><div><b>02</b><span><strong>Record the movement</strong><small>Transfers move balances instead of pretending they are new income or expenses.</small></span></div><div><b>03</b><span><strong>Review your month</strong><small>Use your transaction history and wallet insights to make better decisions.</small></span></div></div>
-          </div>
-        </Reveal>
-      </section>
+      <ScrollReveal as="section" className="section-block section-problem">
+        <div className="container split-section">
+          <div><span className="section-label">THE PROBLEM</span><h2>Money gets confusing when every payment lives somewhere different.</h2><p>Cash in your pocket, money in the bank, savings set aside, transport credit and everyday spending are easy to lose track of when they are scattered across notes and apps.</p></div>
+          <div className="benefit-list"><div><b>01</b><span><strong>See the whole picture</strong><small>One wallet keeps the balances that matter visible together.</small></span></div><div><b>02</b><span><strong>Track the movement</strong><small>Record where money came from, where it went, and why.</small></span></div><div><b>03</b><span><strong>Make the next decision</strong><small>Use your month to decide what to save, spend or adjust.</small></span></div></div>
+        </div>
+      </ScrollReveal>
 
-      <section className="section-block">
-        <Reveal>
-          <div className="container">
-            <div className="section-heading"><span>THE SOLUTION</span><h2>Everything you need for everyday money.</h2><p>Keep your personal finances organized without turning money management into a complicated spreadsheet.</p></div>
-            <BentoFeatures features={FEATURES} />
-          </div>
-        </Reveal>
-      </section>
+      <ScrollReveal as="section" className="section-block">
+        <div className="container">
+          <div className="section-heading"><span>WHAT YOU CAN DO</span><h2>Everything you need for everyday money.</h2><p>Keep your personal finances organized without turning money management into a complicated spreadsheet.</p></div>
+          <BentoFeatures features={FEATURES} />
+        </div>
+      </ScrollReveal>
 
-      <section className="section-block section-muted">
-        <Reveal>
-          <div className="container">
-            <div className="section-heading"><span>HOW IT WORKS</span><h2>Simple from day one.</h2><p>Start small, keep your records consistent, and let your wallet tell the story of your money.</p></div>
-            <HowItWorks steps={STEPS} />
-          </div>
-        </Reveal>
-      </section>
+      <ScrollReveal as="section" className="section-block section-muted">
+        <div className="container">
+          <div className="section-heading"><span>HOW IT WORKS</span><h2>Simple from day one.</h2><p>Start small, keep your records consistent, and let your wallet tell the story of your money.</p></div>
+          <AnimatedSteps steps={STEPS} />
+        </div>
+      </ScrollReveal>
 
-      <section className="section-block">
-        <Reveal>
-          <div className="container">
-            <div className="section-heading"><span>FAQ</span><h2>Questions, answered.</h2></div>
-            <div className="faq-grid">{FAQS.map(([q, a]) => <div className="faq-card" key={q}><h3>{q}</h3><p>{a}</p></div>)}</div>
-            <div className="center-link"><Link href="/faq" className="text-cta">View all FAQs →</Link></div>
-          </div>
-        </Reveal>
-      </section>
+      <ScrollReveal as="section" className="section-block">
+        <div className="container split-section">
+          <div><span className="section-label">BUILT FOR REAL LIFE</span><h2>Know your balance before the month knows you.</h2><p>Whether you are paying bills, receiving your monthly salary, saving for something important, or simply trying to understand your spending, Sultan Pocket gives every transaction a place.</p><Link href="/services" className="text-cta">See all features →</Link></div>
+          <div className="benefit-list"><div><b>01</b><span><strong>Separate money clearly</strong><small>Cash, Online, Savings and E-Transit stay easy to understand.</small></span></div><div><b>02</b><span><strong>Record the movement</strong><small>Transfers move balances instead of pretending they are new income or expenses.</small></span></div><div><b>03</b><span><strong>Review your month</strong><small>Use your transaction history and wallet insights to make better decisions.</small></span></div></div>
+        </div>
+      </ScrollReveal>
 
-      <section className="final-cta">
-        <Reveal>
-          <div className="container"><Image src="/logo.png" alt="Sultan Pocket" width={52} height={52} /><h2>Ready to take control of your wallet?</h2><p>Create your free account and start tracking your money today.</p><Link href="/signup" className="btn btn-primary hero-btn">Create my account →</Link></div>
-        </Reveal>
-      </section>
+      <ScrollReveal as="section" className="section-block section-muted">
+        <div className="container">
+          <div className="section-heading"><span>FAQ</span><h2>Questions, answered.</h2></div>
+          <div className="faq-grid">{FAQS.map(([q, a]) => <div className="faq-card" key={q}><h3>{q}</h3><p>{a}</p></div>)}</div>
+          <div className="center-link"><Link href="/faq" className="text-cta">View all FAQs →</Link></div>
+        </div>
+      </ScrollReveal>
+
+      <ScrollReveal as="section" className="final-cta">
+        <div className="container"><Image src="/logo.png" alt="Sultan Pocket" width={52} height={52} /><h2>Ready to take control of your wallet?</h2><p>Create your free account and start tracking your money today.</p><Link href="/signup" className="btn btn-primary hero-btn">Create my account →</Link></div>
+      </ScrollReveal>
     </main>
   );
 }
