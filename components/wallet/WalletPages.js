@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from './WalletProvider';
 import AnimatedMoney from './AnimatedNumber';
@@ -288,6 +288,8 @@ function DashboardInner() {
   } = useData();
 
   const {basePath}=useWallet();
+  const [mobileTab,setMobileTab]=useState('overview');
+  const mobileSwipeStart=useRef(null);
 
   const recent = tx
     .slice()
@@ -358,9 +360,31 @@ function DashboardInner() {
     ['lend_repay', 'Receive Repayment', '↙']
   ];
 
-  return (
-    <>
+  const handleDashboardTouchStart=(e)=>{ mobileSwipeStart.current=e.touches[0]; };
+  const handleDashboardTouchEnd=(e)=>{
+    if(!mobileSwipeStart.current)return;
+    const end=e.changedTouches[0];
+    const dx=end.clientX-mobileSwipeStart.current.clientX;
+    const dy=end.clientY-mobileSwipeStart.current.clientY;
+    mobileSwipeStart.current=null;
+    if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)+12) setMonth(shiftMonth(month,dx<0?1:-1));
+  };
 
+  return (
+    <div className="wallet-dashboard-mobile-swipe-area" onTouchStart={handleDashboardTouchStart} onTouchEnd={handleDashboardTouchEnd}>
+
+      <div className="mobile-dashboard-tabs" role="tablist" aria-label="Dashboard sections">
+        {[['overview','Overview'],['income','Income'],['expenses','Expenses']].map(([value,label])=><button key={value} type="button" role="tab" aria-selected={mobileTab===value} className={mobileTab===value?'active':''} onClick={()=>setMobileTab(value)}>{label}</button>)}
+      </div>
+
+      <div className={mobileTab==='overview'?'mobile-dashboard-balances':'mobile-tab-hidden'}>
+        <div className="mobile-balance-hero"><small>Available Balance</small><strong>{money(b.available,currency)}</strong><span>Cash + Online · {monthLabel(month)}</span></div>
+        <div className="mobile-balance-strip">
+          {[['Cash',b.cash,'Physical cash'],['Online',b.online,'Bank / digital'],['Savings',b.savings,'Money set aside'],['E-Transit',b.etransit,'Transport balance']].map(([label,value,sub])=><div className="mobile-balance-card" key={label}><small>{label}</small><strong>{money(value,currency)}</strong><span>{sub}</span></div>)}
+        </div>
+      </div>
+
+      <div className={mobileTab==='overview'?'':'mobile-tab-hidden'}>
       <Actions items={actions} />
 
       <UpcomingRecurring
@@ -372,7 +396,7 @@ function DashboardInner() {
         basePath={basePath}
       />
 
-      <div className="wallet-grid four">
+      <div className="wallet-grid four desktop-dashboard-balances">
 
         <Card
           label="Available spending"
@@ -427,7 +451,9 @@ function DashboardInner() {
         />
 
       </div>
+      </div>
 
+      <div className={mobileTab==='overview'?'':'mobile-tab-hidden'}>
       <MonthlySummary transactions={tx} month={month} currency={currency} />
 
       <div className="wallet-grid two">
@@ -568,7 +594,7 @@ function DashboardInner() {
       </div>
 
 
-      <div className="wallet-grid two">
+      <div className="wallet-grid two desktop-dashboard-category-summary">
 
         <CategorySummary
           title="Income breakdown"
@@ -636,8 +662,19 @@ function DashboardInner() {
         </div>
 
       </section>
+      </div>
 
-    </>
+      <div className={mobileTab==='income'?'':'mobile-tab-hidden'}>
+        <section className="wallet-panel mobile-tab-summary"><div className="wallet-panel-head"><div><span className="wallet-section-kicker">THIS MONTH</span><h2>Income</h2></div><strong className="positive">{money(s.income,currency)}</strong></div></section>
+        <CategorySummary title="Income breakdown" data={incomeCats} positive currency={currency} />
+      </div>
+
+      <div className={mobileTab==='expenses'?'':'mobile-tab-hidden'}>
+        <section className="wallet-panel mobile-tab-summary"><div className="wallet-panel-head"><div><span className="wallet-section-kicker">THIS MONTH</span><h2>Expenses</h2></div><strong className="negative">{money(s.expenses,currency)}</strong></div></section>
+        <CategorySummary title="Expense breakdown" data={expenseCats} currency={currency} />
+      </div>
+
+    </div>
   );
 }
 
@@ -705,7 +742,7 @@ function CategorySummary({
           >
 
             <div>
-              <span>{k}</span>
+              <span><span className="mobile-category-icon" aria-hidden="true">{categoryIcon(k)}</span>{k}</span>
 
               <b
                 className={
@@ -783,10 +820,23 @@ function TransactionsInner() {
   const [filterMonth, setFilterMonth] =
     useState('all');
 
+  const [filterOpen, setFilterOpen] = useState(false);
+
   const [importRows,setImportRows]=useState([]);
   const [importErrors,setImportErrors]=useState([]);
   const [importFileName,setImportFileName]=useState('');
   const [importBusy,setImportBusy]=useState(false);
+
+  useEffect(()=>{
+    if(!filterOpen)return;
+    const close=(e)=>{if(e.key==='Escape')setFilterOpen(false)};
+    document.addEventListener('keydown',close);
+    const previous=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return()=>{document.removeEventListener('keydown',close);document.body.style.overflow=previous};
+  },[filterOpen]);
+
+  const activeFilterCount=[filterMonth!=='all',type!=='all',category!=='all',method!=='all',Boolean(person.trim()),Boolean(search.trim())].filter(Boolean).length;
 
   const categories = [
     ...new Set(
@@ -932,6 +982,10 @@ function TransactionsInner() {
             {filtered.length} shown
           </span>
 
+          <button type="button" className="wallet-btn secondary mobile-filter-trigger" onClick={()=>setFilterOpen(true)} aria-expanded={filterOpen}>
+            Filters{activeFilterCount>0&&<span className="mobile-filter-badge">{activeFilterCount}</span>}
+          </button>
+
           <>
             <button
               className="wallet-btn export-btn"
@@ -960,7 +1014,7 @@ function TransactionsInner() {
         {importRows.length>0&&<button className="wallet-btn primary" onClick={confirmImport} disabled={importBusy}>{importBusy?'Importing…':`Confirm import (${importRows.length})`}</button>}
       </div>}
 
-      <div className="wallet-filters">
+      <div className="wallet-filters desktop-filter-row">
 
         <input
           placeholder="Search transactions…"
@@ -1079,6 +1133,20 @@ function TransactionsInner() {
       </div>
 
 
+      <div className={`wallet-mobile-filter-backdrop${filterOpen ? ' is-open' : ''}`} aria-hidden="true" onClick={()=>setFilterOpen(false)} />
+      <aside className={`wallet-mobile-filter-sheet${filterOpen ? ' is-open' : ''}`} aria-label="Transaction filters" aria-hidden={!filterOpen} inert={!filterOpen}>
+        <div className="wallet-mobile-filter-head"><strong>Filters</strong><button type="button" onClick={()=>setFilterOpen(false)} aria-label="Close filters">×</button></div>
+        <div className="wallet-mobile-filter-grid">
+          <label>Search<input placeholder="Search transactions…" value={search} onChange={e=>setSearch(e.target.value)} /></label>
+          <label>Month<select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)}><option value="all">All months</option>{months.map(m=><option key={m} value={m}>{monthLabel(m)}</option>)}</select></label>
+          <label>Type<select value={type} onChange={e=>setType(e.target.value)}><option value="all">All types</option>{types.map(t=><option key={t} value={t}>{transactionLabel({type:t})}</option>)}</select></label>
+          <label>Category<select value={category} onChange={e=>setCategory(e.target.value)}><option value="all">All categories</option>{categories.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
+          <label>Method<select value={method} onChange={e=>setMethod(e.target.value)}><option value="all">All methods</option><option value="cash">Cash</option><option value="online">Online</option><option value="etransit">E-Transit Wallet</option></select></label>
+          <label>Person<input placeholder="Filter by person" value={person} onChange={e=>setPerson(e.target.value)} /></label>
+        </div>
+        <div className="wallet-mobile-filter-actions"><button type="button" className="wallet-btn secondary" onClick={reset}>Reset</button><button type="button" className="wallet-btn primary" onClick={()=>setFilterOpen(false)}>Apply filters</button></div>
+      </aside>
+
       {!user && (
         <div className="wallet-readonly-note">
           Guest transactions can be edited or deleted on this device. Cloud storage, attachments, recurring rules, and unlimited transactions require an account.
@@ -1158,7 +1226,7 @@ function SwipeTransactionCard({transaction:t,index,user,guest,currency,onViewAtt
       <div className="wallet-mobile-tx-main">
         <div>
           <strong>
-            {t.category||t.source||t.person||t.notes||'Transaction'}
+            {t.category ? <><span className="mobile-category-icon" aria-hidden="true">{categoryIcon(t.category)}</span>{t.category}</> : (t.source||t.person||t.notes||'Transaction')}
             {t.attachment_path && <button type="button" className="attachment-button mobile-attachment-button" onClick={(e)=>{e.stopPropagation();onViewAttachment(t)}} title="View receipt" aria-label="View receipt">📎</button>}
           </strong>
           {t.person && <small>{t.person}</small>}
@@ -1273,6 +1341,7 @@ function TxTable({
 
                 <td>
 
+                  {t.category && <span className="mobile-category-icon" aria-hidden="true">{categoryIcon(t.category)}</span>}
                   {t.category ||
                     t.source ||
                     t.person ||
@@ -1621,6 +1690,9 @@ function parseCSVText(text){
   if(cell!==''||row.length){row.push(cell);if(row.some(v=>v!==''))rows.push(row);}
   return rows;
 }
+
+const CATEGORY_ICONS = {Food:'🍔',Transport:'🚌',Bills:'💡',Shopping:'🛍️',Health:'🩺',Medical:'🩺',Education:'📚',Entertainment:'🎬',Rent:'🏠',Groceries:'🛒',Fuel:'⛽',Travel:'✈️','Monthly Salary':'💼',Salary:'💼',Freelance:'💻',Gifts:'🎁',Other:'📦'};
+function categoryIcon(name){return CATEGORY_ICONS[name] || (String(name||'').toLowerCase().includes('transport') ? '🚌' : '📁');}
 
 function displayMethod(method) {
 

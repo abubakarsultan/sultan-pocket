@@ -30,12 +30,22 @@ export default function WalletShell({
   const [gate, setGate] = useState(false);
   const [gateReason, setGateReason] = useState('guest');
   const [celebrate, setCelebrate] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     const celebrateFirst = () => setCelebrate(true);
     window.addEventListener('wallet:first-transaction', celebrateFirst);
     return () => window.removeEventListener('wallet:first-transaction', celebrateFirst);
   }, []);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setMoreOpen(false); };
+    document.addEventListener('keydown', onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = previousOverflow; };
+  }, [moreOpen]);
 
   useEffect(() => {
     const open = () => { setGateReason('guest'); setGate(true); };
@@ -212,32 +222,31 @@ export default function WalletShell({
         </button>
 
         {/* Mobile navigation */}
-        <nav
-          className="wallet-mobile-nav"
-          aria-label="Wallet navigation"
-        >
-          {NAV.map(
-            ([href, ic, label]) => (
-              <Link
-                className={p === href ? 'active' : ''}
-                key={href}
-                href={href}
-              >
-                <i aria-hidden="true">
-                  {ic}
-                </i>
-
-                <span>
-                  {label === 'Debt & Borrowing'
-                    ? 'Debt'
-                    : label === 'Charts & Stats'
-                      ? 'Charts'
-                      : label}
-                </span>
-              </Link>
-            )
-          )}
+        <nav className="wallet-mobile-nav" aria-label="Wallet navigation">
+          <Link className={p === `${basePath}` ? 'active' : ''} href={basePath}>
+            <i aria-hidden="true">▦</i><span>Home</span>
+          </Link>
+          <Link className={p.startsWith(`${basePath}/transactions`) ? 'active' : ''} href={`${basePath}/transactions`}>
+            <i aria-hidden="true">↔</i><span>Transactions</span>
+          </Link>
+          <button type="button" className="wallet-mobile-add" aria-label="Add transaction" onClick={() => protectedAction(() => window.dispatchEvent(new CustomEvent('wallet:add', { detail: 'expense' })))}>
+            <i aria-hidden="true">+</i><span>Add</span>
+          </button>
+          <button type="button" className={`wallet-mobile-more-btn${moreOpen ? ' wallet-mobile-more-active' : ''}`} onClick={() => setMoreOpen(true)} aria-expanded={moreOpen}>
+            <i aria-hidden="true">•••</i><span>More</span>
+          </button>
         </nav>
+
+        <div className={`wallet-mobile-more-backdrop${moreOpen ? ' is-open' : ''}`} aria-hidden="true" onClick={() => setMoreOpen(false)} />
+        <aside className={`wallet-mobile-more-sheet${moreOpen ? ' is-open' : ''}`} aria-label="More wallet tools" aria-hidden={!moreOpen} inert={!moreOpen}>
+          <div className="wallet-mobile-more-handle" />
+          <h2>More tools</h2>
+          <div className="wallet-more-grid">
+            {NAV.filter(([, , label]) => label !== 'Dashboard' && label !== 'Transactions').map(([href, ic, label]) => (
+              <Link key={href} href={href} onClick={() => setMoreOpen(false)}><i>{ic}</i><span>{label === 'Debt & Borrowing' ? 'Debt' : label === 'Charts & Stats' ? 'Charts' : label}</span></Link>
+            ))}
+          </div>
+        </aside>
 
       </section>
 

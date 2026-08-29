@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect,useMemo,useRef,useState} from 'react';
+import WalletModalMobile from './WalletModalMobile';
 import {useWallet} from './WalletProvider';
 import {supabase} from '@/lib/supabaseClient';
 import {DEFAULT_EXPENSE_CATEGORIES,DEFAULT_INCOME_CATEGORIES,todayISO,firstDayOfMonth,debtSnapshot,lendingSnapshot,money} from '@/lib/wallet/calc';
@@ -31,9 +32,18 @@ export default function WalletModal(){
   const [attachmentRemove,setAttachmentRemove]=useState(false);
   const [attachmentError,setAttachmentError]=useState('');
   const [goals,setGoals]=useState([]);
+  const [isMobile,setIsMobile]=useState(false);
   const attachmentInputRef=useRef(null);
 
   useEffect(()=>()=>window.clearTimeout(closeTimer.current),[]);
+
+  useEffect(()=>{
+    const media=window.matchMedia('(max-width: 760px)');
+    const sync=()=>setIsMobile(media.matches);
+    sync();
+    media.addEventListener?.('change',sync);
+    return()=>media.removeEventListener?.('change',sync);
+  },[]);
 
   useEffect(()=>{
     if(!attachmentFile){setAttachmentPreview('');return;}
@@ -63,7 +73,7 @@ export default function WalletModal(){
       setClosing(false);setForm({...BASE,...t,type:k,amount:String(t.amount??''),date:t.date||todayISO(),category:t.category||(k==='income'?'Monthly Salary':'Food'),method:t.method||'cash',from:t.from||'cash',destination:t.destination||'cash',repayRequired:t.repayRequired!==false,attachment_path:t.attachment_path||'',goal_id:t.goal_id||t.details?.goal_id||''});setOpen(true);
     }
     window.addEventListener('wallet:add',handleAdd);window.addEventListener('wallet:edit',handleEdit);return()=>{window.removeEventListener('wallet:add',handleAdd);window.removeEventListener('wallet:edit',handleEdit)};
-  },[user]);
+  },[user,guest,month]);
 
   const custom=state?.customCategories||[];
   const categories=useMemo(()=>{const defaults=kind==='income'?DEFAULT_INCOME_CATEGORIES:DEFAULT_EXPENSE_CATEGORIES;const customForKind=custom.filter(c=>c.type===kind).map(c=>c.name);return [...new Set([...defaults,...customForKind])]},[custom,kind]);
@@ -97,8 +107,14 @@ export default function WalletModal(){
   async function deleteAttachment(path){if(!path)return null;const {error}=await supabase.storage.from('wallet-attachments').remove([path]);return error||null}
   async function saveCategory(){const name=newCategory.trim();if(!name){notify('Enter a category name first.');return}const saved=await addCategory(name,kind==='income'?'income':'expense');if(saved){setField('category',name);setNewCategory('')}}
 
+  function selectMobileKind(nextKind){
+    const normalizedKind=nextKind==='transport'?'expense':nextKind;
+    setKind(normalizedKind);
+    setForm(current=>({...current,type:normalizedKind,category:nextKind==='income'?'Monthly Salary':nextKind==='transport'?'Transport':normalizedKind==='expense'?'Food':current.category,from:normalizedKind==='withdraw'?'online':current.from||'cash',method:nextKind==='transport'?'etransit':normalizedKind==='expense'&&current.category==='Transport'?(current.method||'etransit'):(current.method||'cash')}));
+  }
+
   async function submit(e){
-    e.preventDefault();setAttachmentError('');if(!form.amount||Number(form.amount)<=0){notify('Enter a valid amount.');return}
+    e?.preventDefault?.();setAttachmentError('');if(!form.amount||Number(form.amount)<=0){notify('Enter a valid amount.');return}
     if((kind==='borrow'||kind==='repay'||kind==='lend'||kind==='lend_repay')&&!String(form.person||'').trim()){notify('Enter the person name.');return}
     if(kind==='repay'){const person=String(form.person||'').trim();const remaining=outstandingPeople[person]?.remaining||0;if(!remaining){notify(`No outstanding debt found for ${person}.`);return}if(Number(form.amount)>remaining){notify(`Maximum repayment for ${person} is ${money(remaining,currency)}.`);return}}
     if(kind==='lend_repay'){const person=String(form.person||'').trim();const remaining=lendingPeople[person]?.remaining||0;if(!remaining){notify(`No outstanding lending found for ${person}.`);return}if(Number(form.amount)>remaining){notify(`Maximum recovery for ${person} is ${money(remaining,currency)}.`);return}}
@@ -121,7 +137,11 @@ export default function WalletModal(){
   }
 
   const isExpense=kind==='expense';const isIncome=kind==='income';const isBorrow=kind==='borrow';const isRepay=kind==='repay';const isLend=kind==='lend';const isLendRepay=kind==='lend_repay';const isSavings=kind==='savings_add'||kind==='savings_use';const isTransfer=kind==='transfer'||kind==='withdraw';const isTransit=kind==='etransit_add';
-  return <div className={`gate-backdrop ${closing ? "is-closing" : ""}`}><form className={`wallet-modal ${closing ? "is-closing" : ""}`} onSubmit={submit}><div className="wallet-modal-head"><div><span className="wallet-modal-kicker">{editingId?'EDIT TRANSACTION':'NEW TRANSACTION'}</span><h2>{TITLES[kind]||'Transaction'}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}>×</button></div><div className="wallet-form-grid">
+  if(isMobile){
+    return <WalletModalMobile kind={kind} form={form} setField={setField} categories={categories} goals={goals} busy={busy} editingId={editingId} currency={currency} onKindChange={selectMobileKind} onClose={close} onSubmit={submit} closing={closing} user={user}/>;
+  }
+
+  return <div className={`gate-backdrop ${closing ? "is-closing" : ""}`}><form className={`wallet-modal desktop-wallet-modal ${closing ? "is-closing" : ""}`} onSubmit={submit}><div className="wallet-modal-head"><div><span className="wallet-modal-kicker">{editingId?'EDIT TRANSACTION':'NEW TRANSACTION'}</span><h2>{TITLES[kind]||'Transaction'}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}>×</button></div><div className="wallet-form-grid">
     <label>Amount<input type="number" min="1" step="1" inputMode="decimal" value={form.amount} onChange={e=>setField('amount',e.target.value)} required autoFocus/></label>
     <label>Date<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)} required/></label>
     {(isExpense||isIncome)&&<><label>Category<select value={categories.includes(form.category)?form.category:''} onChange={e=>setField('category',e.target.value)} required><option value="" disabled>Select category</option>{categories.map(c=><option key={c} value={c}>{c}</option>)}</select><button type="button" className="inline-add" onClick={()=>document.getElementById('wallet-new-category')?.focus()}>+ Add category</button></label><label>Payment method<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option>{isExpense&&form.category==='Transport'&&<option value="etransit">E-Transit Wallet</option>}</select></label><label className="full category-helper">New {isIncome?'income':'expense'} category<div className="category-create"><input id="wallet-new-category" value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder={isIncome?'e.g. Freelance Income':'e.g. Medical'}/><button type="button" className="wallet-btn secondary" onClick={saveCategory}>Save category</button></div><small>This category will only appear in {isIncome?'Income':'Expense'} transactions.</small></label></>}
