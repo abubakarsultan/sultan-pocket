@@ -137,7 +137,33 @@ export default function WalletModal(){
   const renderMobileDetails=()=> <div className="wallet-mobile-flow-details">
     {(isExpense||isIncome)&&<><label>Category<select value={categories.includes(form.category)?form.category:''} onChange={e=>setField('category',e.target.value)} required><option value="" disabled>Select category</option>{categories.map(c=><option key={c} value={c}>{categoryIcon(c)} {c}</option>)}</select></label><label>Payment method<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option>{isExpense&&form.category==='Transport'&&<option value="etransit">E-Transit Wallet</option>}</select></label></>}
     {isExpense&&<label>Merchant (optional)<input value={form.merchant||''} onChange={e=>setField('merchant',e.target.value)} placeholder="e.g. McDonald's"/></label>}
-    {(isBorrow||isRepay||isLend||isLendRepay)&&<><label>Person<input value={form.person} onChange={e=>setField('person',e.target.value)} placeholder="Person name" required/></label><label>{isBorrow?'Receive into':isLend?'Lend from':isLendRepay?'Receive into':'Repay from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>{isBorrow&&<label>Repayment required<select value={form.repayRequired?'yes':'no'} onChange={e=>setField('repayRequired',e.target.value==='yes')}><option value="yes">Yes</option><option value="no">No</option></select></label>}</>}
+    {(isBorrow || isRepay || isLend || isLendRepay) && (
+      <>
+        <label>
+          Person
+          <input value={form.person} onChange={e => setField('person', e.target.value)} placeholder="Person name" required />
+        </label>
+        <label>
+          {isBorrow ? 'Receive into' : isLend ? 'Lend from' : isLendRepay ? 'Receive into' : 'Repay from'}
+          <select value={form.method} onChange={e => setField('method', e.target.value)}>
+            <option value="cash">Cash</option>
+            <option value="online">Online</option>
+          </select>
+        </label>
+        {isBorrow && (
+          <label>
+            Repayment required
+            <select
+              value={form.repayRequired ? 'yes' : 'no'}
+              onChange={e => setField('repayRequired', e.target.value === 'yes')}
+            >
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </label>
+        )}
+      </>
+    )}
     {isSavings&&<><label>Savings category<select value={form.goal_id} onChange={e=>setField('goal_id',e.target.value)} required><option value="">Select savings goal</option><option value="general">General Savings</option>{goals.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>{kind==='savings_add'?'Save from':'Use from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label></>}
     {isTransit&&<label>Load from<select value={form.from} onChange={e=>setField('from',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>}
     {isTransfer&&<label>{kind==='withdraw'?'Withdraw from':'Transfer from'}<select value={form.from} onChange={e=>setField('from',e.target.value)}>{kind==='withdraw'?<option value="online">Online</option>:<><option value="online">Online</option><option value="cash">Cash</option></>}</select></label>}
@@ -151,7 +177,33 @@ export default function WalletModal(){
       <label>Date<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)} required/></label>
       {(isExpense||isIncome)&&<><label>Category<select value={categories.includes(form.category)?form.category:''} onChange={e=>setField('category',e.target.value)} required><option value="" disabled>Select category</option>{categories.map(c=><option key={c} value={c}>{categoryIcon(c)} {c}</option>)}</select><button type="button" className="inline-add" onClick={()=>document.getElementById('wallet-new-category')?.focus()}>+ Add category</button></label><label>Payment method<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option>{isExpense&&form.category==='Transport'&&<option value="etransit">E-Transit Wallet</option>}</select></label><label className="full category-helper">New {isIncome?'income':'expense'} category<div className="category-create"><input id="wallet-new-category" value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder={isIncome?'e.g. Freelance Income':'e.g. Medical'}/><button type="button" className="wallet-btn secondary" onClick={saveCategory}>Save category</button></div><small>This category will only appear in {isIncome?'Income':'Expense'} transactions.</small></label></>}
       {isExpense&&<label className="full">Merchant (optional)<input value={form.merchant||''} onChange={e=>setField('merchant',e.target.value)} placeholder="e.g. McDonald's"/></label>}
-      {(isBorrow||isRepay||isLend||isLendRepay)&&<><label>Person<input value={form.person} onChange={e=>setField('person',e.target.value)} placeholder="Person name" required/></label><label>{isBorrow?'Receive into':isLend?'Lend from':isLendRepay?'Receive into':'Repay from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>{isBorrow&&<label>Repayment required<select value={form.repayRequired?'yes':'no'} onChange={e=>setField('repayRequired',e.target.value==='yes')}><option value="yes">Yes</option><option value="no">No</option></select></label>}</>}
+      {(isBorrow || isRepay || isLend || isLendRepay) && (
+        <>
+          <label>
+            Person
+            <input value={form.person} onChange={e => setField('person', e.target.value)} placeholder="Person name" required />
+          </label>
+          <label>
+            {isBorrow ? 'Receive into' : isLend ? 'Lend from' : isLendRepay ? 'Receive into' : 'Repay from'}
+            <select value={form.method} onChange={e => setField('method', e.target.value)}>
+              <option value="cash">Cash</option>
+              <option value="online">Online</option>
+            </select>
+          </label>
+          {isBorrow && (
+            <label>
+              Repayment required
+              <select
+                value={form.repayRequired ? 'yes' : 'no'}
+                onChange={e => setField('repayRequired', e.target.value === 'yes')}
+              >
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+          )}
+        </>
+      )}
       {isSavings&&<><label>Savings category<select value={form.goal_id} onChange={e=>setField('goal_id',e.target.value)} required><option value="">Select savings goal</option><option value="general">General Savings</option>{goals.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>{kind==='savings_add'?'Save from':'Use from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label></>}
       {isTransit&&<label>Load from<select value={form.from} onChange={e=>setField('from',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>}
       {isTransfer&&<><label>{kind==='withdraw'?'Withdraw from':'Transfer from'}<select value={form.from} onChange={e=>setField('from',e.target.value)}>{kind==='withdraw'?<option value="online">Online</option>:<><option value="online">Online</option><option value="cash">Cash</option></>}</select></label>{kind==='transfer'&&<label>Transfer to<input value={form.from==='cash'?'Online':'Cash'} readOnly/></label>}</>}
