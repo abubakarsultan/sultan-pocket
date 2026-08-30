@@ -1,81 +1,83 @@
 'use client';
 
+import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import AnimatedNumber from '@/components/wallet/AnimatedNumber';
 import { useEffect, useMemo, useState } from 'react';
 
-const DEMO_TRANSACTIONS = [
-  { kind: 'expense', icon: '−', title: 'Food', sub: 'Today · Cash', amount: -850 },
-  { kind: 'expense', icon: '−', title: 'Transport', sub: 'Today · E-Transit', amount: -250 },
-  { kind: 'income', icon: '+', title: 'Freelance', sub: 'Today · Online', amount: 2500 },
+const DEMO_STEPS = [
+  {
+    kind: 'income', icon: '+', title: 'Monthly Salary', sub: 'Aug 1 · Online', amount: 60000,
+    balances: { available: 108250, cash: 18750, online: 89500, savings: 0, etransit: 0 },
+    affected: 'online', direction: 'up', movement: 'Money in → Online',
+  },
+  {
+    kind: 'expense', icon: '−', title: 'Food', sub: 'Today · Cash', amount: -850,
+    balances: { available: 107400, cash: 17900, online: 89500, savings: 0, etransit: 0 },
+    affected: 'cash', direction: 'down', movement: 'Cash → Food',
+  },
+  {
+    kind: 'save', icon: '↗', title: 'Savings', sub: 'Today · Cash', amount: -10000,
+    balances: { available: 97400, cash: 7900, online: 89500, savings: 10000, etransit: 0 },
+    affected: 'savings', direction: 'up', movement: 'Cash → Savings',
+  },
 ];
 
-const START_BALANCE = 48250;
+const START = { available: 48250, cash: 18750, online: 29500, savings: 0, etransit: 0 };
+
+function money(value) {
+  return `Rs. ${Number(value).toLocaleString('en-PK')}`;
+}
 
 export default function AnimatedProductPreview() {
   const reduce = useReducedMotion();
-  const [sampleIndex, setSampleIndex] = useState(0);
-  const [typedTitle, setTypedTitle] = useState('');
-  const [showTypedRow, setShowTypedRow] = useState(false);
-  const [balance, setBalance] = useState(START_BALANCE);
-  const sample = useMemo(() => DEMO_TRANSACTIONS[sampleIndex % DEMO_TRANSACTIONS.length], [sampleIndex]);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [showStep, setShowStep] = useState(false);
+  const [balances, setBalances] = useState(START);
+  const step = useMemo(() => DEMO_STEPS[stepIndex % DEMO_STEPS.length], [stepIndex]);
 
   useEffect(() => {
     if (reduce) {
-      setTypedTitle(sample.title);
-      setShowTypedRow(true);
-      setBalance(START_BALANCE + sample.amount);
+      setShowStep(true);
+      setBalances(step.balances);
       return undefined;
     }
 
     let cancelled = false;
-    let typeTimer;
-    let finishTimer;
-    let resetTimer;
+    let showTimer;
+    let updateTimer;
     let nextTimer;
-    let i = 0;
 
-    setTypedTitle('');
-    setShowTypedRow(true);
-    setBalance(START_BALANCE);
+    setShowStep(false);
+    setBalances(START);
 
-    const typeNext = () => {
+    showTimer = window.setTimeout(() => {
       if (cancelled) return;
-      i += 1;
-      setTypedTitle(sample.title.slice(0, i));
-      if (i < sample.title.length) {
-        typeTimer = window.setTimeout(typeNext, 65);
-      } else {
-        finishTimer = window.setTimeout(() => {
-          if (cancelled) return;
-          setShowTypedRow(false);
-          setBalance(START_BALANCE + sample.amount);
-          nextTimer = window.setTimeout(() => {
-            if (!cancelled) setSampleIndex(v => v + 1);
-          }, 4300);
-        }, 650);
-      }
-    };
+      setShowStep(true);
+      updateTimer = window.setTimeout(() => {
+        if (!cancelled) setBalances(step.balances);
+      }, 520);
+    }, 500);
 
-    typeTimer = window.setTimeout(typeNext, 420);
-
-    resetTimer = window.setTimeout(() => {
-      if (!cancelled) {
-        setShowTypedRow(false);
-        setBalance(START_BALANCE);
-      }
-    }, 5700);
+    nextTimer = window.setTimeout(() => {
+      if (!cancelled) setStepIndex(v => v + 1);
+    }, 4800);
 
     return () => {
       cancelled = true;
-      window.clearTimeout(typeTimer);
-      window.clearTimeout(finishTimer);
-      window.clearTimeout(resetTimer);
+      window.clearTimeout(showTimer);
+      window.clearTimeout(updateTimer);
       window.clearTimeout(nextTimer);
     };
-  }, [sample, reduce]);
+  }, [step, reduce]);
 
   const rowTransition = { duration: 0.3, ease: 'easeOut' };
+  const balanceCards = [
+    ['cash', 'Cash', balances.cash, 'Physical cash'],
+    ['online', 'Online', balances.online, 'Bank / digital'],
+    ['savings', 'Savings', balances.savings, 'Money set aside'],
+    ['etransit', 'E-Transit', balances.etransit, 'Transport balance'],
+  ];
 
   return (
     <div className="hero-visual" aria-label="Sultan Pocket wallet preview">
@@ -92,39 +94,52 @@ export default function AnimatedProductPreview() {
 
         <div className="preview-balance">
           <small>Sample data · Available balance</small>
-          <strong><AnimatedNumber value={balance} /></strong>
-          <span>+ Rs. 60,000 income this month</span>
+          <strong><AnimatedNumber value={balances.available} /></strong>
+          <span>{step.direction === 'up' ? '↑' : '↓'} {money(Math.abs(step.amount))} {step.direction === 'up' ? 'added' : 'moved'}</span>
         </div>
 
         <div className="preview-cards">
-          <motion.div initial={reduce ? false : { opacity: 0, y: 14 }} animate={reduce ? undefined : { opacity: 1, y: 0 }} transition={{ ...rowTransition, delay: 0.15 }}>
-            <small>Cash</small><b>Rs. 18,750</b>
-          </motion.div>
-          <motion.div initial={reduce ? false : { opacity: 0, y: 14 }} animate={reduce ? undefined : { opacity: 1, y: 0 }} transition={{ ...rowTransition, delay: 0.22 }}>
-            <small>Online</small><b>Rs. 29,500</b>
-          </motion.div>
+          {balanceCards.map(([key, label, value, sub], i) => (
+            <motion.div
+              key={key}
+              className={step.affected === key && showStep ? 'is-affected' : ''}
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              animate={reduce ? undefined : { opacity: 1, y: 0 }}
+              transition={{ ...rowTransition, delay: 0.12 + i * 0.05 }}
+            >
+              <small>{label}</small>
+              <b><AnimatedNumber value={value} /></b>
+              <span>{sub}</span>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="preview-movement" aria-live="polite">
+          <span>Money movement</span>
+          <strong>{step.movement}</strong>
+          <i className={showStep ? 'is-active' : ''}>→</i>
         </div>
 
         <div className="preview-list">
           <AnimatePresence initial={false} mode="popLayout">
-            {showTypedRow && (
+            {showStep && (
               <motion.div
-                key={`typing-${sampleIndex}`}
+                key={`step-${stepIndex}`}
                 layout
                 initial={reduce ? false : { opacity: 0, y: -10 }}
                 animate={reduce ? undefined : { opacity: 1, y: 0 }}
                 exit={reduce ? undefined : { opacity: 0, y: 10 }}
                 transition={{ duration: 0.25, ease: 'easeOut' }}
               >
-                <span className={`preview-icon ${sample.kind}`}>{sample.icon}</span>
-                <span><b>{typedTitle || 'Typing…'}</b><small>{sample.sub}</small></span>
-                <strong>{sample.amount > 0 ? '+' : '−'} Rs. {Math.abs(sample.amount).toLocaleString('en-PK')}</strong>
+                <span className={`preview-icon ${step.kind}`}>{step.icon}</span>
+                <span><b>{step.title}</b><small>{step.sub}</small></span>
+                <strong>{step.amount > 0 ? '+' : '−'} Rs. {Math.abs(step.amount).toLocaleString('en-PK')}</strong>
               </motion.div>
             )}
             {[
               ['income', '+', 'Monthly Salary', 'Aug 1 · Online', '+ Rs. 60,000'],
               ['save', '↗', 'Savings', 'Aug 5 · Cash', '− Rs. 10,000'],
-            ].map(([kind, icon, title, sub, amount], i) => (
+            ].filter((row) => row[2] !== step.title).map(([kind, icon, title, sub, amount], i) => (
               <motion.div key={title} layout initial={reduce ? false : { opacity: 0, y: 10 }} animate={reduce ? undefined : { opacity: 1, y: 0 }} transition={{ ...rowTransition, delay: 0.1 + i * 0.08 }}>
                 <span className={`preview-icon ${kind}`}>{icon}</span>
                 <span><b>{title}</b><small>{sub}</small></span>
@@ -133,6 +148,8 @@ export default function AnimatedProductPreview() {
             ))}
           </AnimatePresence>
         </div>
+
+        <Link href="/expense-tracker" className="preview-expense-link">Open Expense Tracker <span>→</span></Link>
       </motion.div>
     </div>
   );

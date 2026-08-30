@@ -62,9 +62,17 @@ export default function Navbar() {
         <div className="site-navbar-actions">
           <ThemeToggle />
           {loading ? null : user ? (
-            <><Link href="/dashboard" className="btn btn-ghost desktop-auth-link">Dashboard</Link><ProfileMenu compact /></>
+            <>
+              <Link href="/dashboard" className="btn btn-ghost desktop-auth-link">Dashboard</Link>
+              <ProfileMenu compact />
+              <Link href="/dashboard" className="btn btn-primary mobile-direct-auth">Dashboard</Link>
+            </>
           ) : (
-            <><Link href="/signin" className="btn btn-ghost desktop-auth-link">Sign in</Link><Link href="/signup" className="btn btn-primary desktop-auth-link">Sign up</Link></>
+            <>
+              <Link href="/signin" className="btn btn-ghost desktop-auth-link">Sign in</Link>
+              <Link href="/signup" className="btn btn-primary desktop-auth-link">Sign up</Link>
+              <Link href="/signin" className="btn btn-ghost mobile-direct-auth">Log in</Link>
+            </>
           )}
           <button type="button" className={`mobile-menu-btn${open ? ' is-open' : ''}`} aria-label={open ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={open} onClick={() => setOpen(v => !v)}>
             <span /><span /><span />
