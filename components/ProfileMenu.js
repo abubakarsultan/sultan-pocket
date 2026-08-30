@@ -36,6 +36,9 @@ export default function ProfileMenu({compact=false}){
   const editUrl=`${profileUrl}?edit=1`;
 
   return <div ref={menuRef} className="profile-menu-wrap" style={{position:'relative'}}>
+    {compact&&<Link href="/dashboard" className="profile-mobile-dashboard-link" aria-label={`Open dashboard for ${fullName}`}>
+      <span className="profile-avatar">{avatar?<img src={avatar} alt=""/>:initials}</span>
+    </Link>}
     <button className="profile-trigger" onClick={()=>setOpen(v=>!v)} aria-expanded={open} aria-haspopup="menu" aria-label={`Open account menu for ${fullName}`} type="button">
       <span className="profile-avatar">{avatar?<img src={avatar} alt=""/>:initials}</span>
       {!compact&&<span className="profile-trigger-name">{fullName}</span>}

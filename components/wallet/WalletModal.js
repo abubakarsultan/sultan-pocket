@@ -16,6 +16,8 @@ const TITLES={
 };
 function normalizeType(t){return t==='income_other'||t==='salary'?'income':t;}
 function displayMethod(m){return m==='etransit'?'E-Transit Wallet':m==='online'?'Online':'Cash';}
+const CATEGORY_ICONS={Food:'🍔',Transport:'🚌',Bills:'💡',Shopping:'🛍️',Groceries:'🛒',Entertainment:'🎬',Health:'❤️',Education:'📚',Rent:'🏠',Utilities:'💡',Salary:'💰','Monthly Salary':'💰',Freelance:'💼',Other:'📌'};
+function categoryIcon(name){return CATEGORY_ICONS[String(name||'')]||'📌';}
 
 export default function WalletModal(){
   const {user,guest,add,update,addCategory,state,notify,month,currency}=useWallet();

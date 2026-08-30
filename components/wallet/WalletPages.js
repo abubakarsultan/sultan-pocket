@@ -1147,44 +1147,55 @@ function TransactionsInner() {
 function SwipeTransactionCard({transaction:t,index,user,guest,currency,onViewAttachment,onEdit,onDelete}){
   const [offset,setOffset]=useState(0);
   const start=useRef(null);
+  const currentOffset=useRef(0);
   const dragging=useRef(false);
 
+  function setSwipeOffset(value){
+    const next=Math.max(-88,Math.min(0,value));
+    currentOffset.current=next;
+    setOffset(next);
+  }
+
   function touchStart(e){
-    const touch=e.touches[0];
+    const touch=e.touches?.[0];
+    if(!touch)return;
     start.current={x:touch.clientX,y:touch.clientY};
     dragging.current=false;
   }
   function touchMove(e){
     if(!start.current)return;
-    const touch=e.touches[0];
+    const touch=e.touches?.[0];
+    if(!touch)return;
     const dx=touch.clientX-start.current.x;
     const dy=touch.clientY-start.current.y;
     if(!dragging.current){
-      if(Math.abs(dy)>Math.abs(dx)+8){start.current=null;return;}
-      if(Math.abs(dx)<8)return;
-      dragging.current=Math.abs(dx)>Math.abs(dy);
+      if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+      if(Math.abs(dy)>=Math.abs(dx)){start.current=null;return;}
+      dragging.current=true;
     }
     if(dragging.current){
       e.preventDefault();
-      setOffset(Math.max(-88,Math.min(0,dx+(offset===-88? -88:0))));
+      const base=currentOffset.current===-88?88:0;
+      setSwipeOffset(dx-base);
     }
   }
   function touchEnd(){
     if(!start.current)return;
-    setOffset(offset < -32 ? -88 : 0);
+    setSwipeOffset(currentOffset.current<-32?-88:0);
     start.current=null;
     dragging.current=false;
   }
+  function closeSwipe(){setSwipeOffset(0);}
 
   return <div data-transaction-id={String(t.id)} className="wallet-mobile-swipe-shell wallet-list-stagger" style={{animationDelay:`${Math.min(index,18)*40}ms`}}>
     {(user||guest) && <button type="button" className="wallet-mobile-swipe-delete" onClick={onDelete}>🗑 Delete</button>}
     <article
-      className={`wallet-mobile-tx wallet-mobile-swipe-content${offset===-88?' swiped':''}`}
-      style={{transform: offset!==-88 ? `translateX(${offset}px)` : undefined,transition:offset===0||offset===-88?'transform .22s cubic-bezier(.34,1.2,.64,1)':'none'}}
+      className="wallet-mobile-tx wallet-mobile-swipe-content"
+      style={{transform:`translateX(${offset}px)`,transition:dragging.current?'none':'transform .22s cubic-bezier(.34,1.2,.64,1)'}}
       onTouchStart={touchStart}
       onTouchMove={touchMove}
       onTouchEnd={touchEnd}
-      onClick={() => { if(offset===-88)setOffset(0); }}
+      onClick={() => { if(offset!==0) closeSwipe(); }}
     >
       <div className="wallet-mobile-tx-top">
         <span className={`wallet-pill pill-${t.type}`}>{transactionLabel(t)}</span>
@@ -1210,7 +1221,6 @@ function SwipeTransactionCard({transaction:t,index,user,guest,currency,onViewAtt
     </article>
   </div>;
 }
-
 
 function TxTable({
   tx,
