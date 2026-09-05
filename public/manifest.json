@@ -10,6 +10,9 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
   "prefer_related_applications": false,
+  "related_applications": [
+    { "platform": "play", "id": "online.sultanpocket.twa" }
+  ],
   "orientation": "portrait-primary",
   "background_color": "#F8F7F4",
   "theme_color": "#0057FF",
