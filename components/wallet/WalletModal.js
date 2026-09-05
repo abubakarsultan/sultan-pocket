@@ -33,6 +33,8 @@ export default function WalletModal(){
   const [attachmentPreview,setAttachmentPreview]=useState('');
   const [attachmentRemove,setAttachmentRemove]=useState(false);
   const [attachmentError,setAttachmentError]=useState('');
+  const [scanningReceipt,setScanningReceipt]=useState(false);
+  const [scanNotice,setScanNotice]=useState('');
   const [goals,setGoals]=useState([]);
   const [isMobile,setIsMobile]=useState(false);
   const [mobileStep,setMobileStep]=useState(1);
@@ -96,10 +98,41 @@ export default function WalletModal(){
 
   function handleAttachmentChange(e){
     if(!user){setAttachmentError('Receipt uploads require an account.');e.target.value='';return}
-    const file=e.target.files?.[0];setAttachmentError('');if(!file)return;
+    const file=e.target.files?.[0];setAttachmentError('');setScanNotice('');if(!file)return;
     if(!file.type?.startsWith('image/')){setAttachmentError('Please select an image file.');e.target.value='';return}
     if(file.size>5*1024*1024){setAttachmentError('Attachment must be 5MB or smaller.');e.target.value='';return}
     setAttachmentFile(file);setAttachmentRemove(false);
+    if(isExpense)scanReceipt(file);
+  }
+  function fileToBase64(file){
+    return new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(String(r.result).split(',')[1]||'');
+      r.onerror=()=>reject(new Error('Could not read the file.'));
+      r.readAsDataURL(file);
+    });
+  }
+  async function scanReceipt(file){
+    setScanningReceipt(true);setScanNotice('');
+    try{
+      const imageBase64=await fileToBase64(file);
+      const res=await fetch('/api/receipt-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageBase64,mimeType:file.type})});
+      const data=await res.json();
+      if(!res.ok||!data.ok){setScanNotice('Photo se data nahi mil saka, manually bhar lein.');return}
+      if(data.confidence==='low'&&!data.amount&&!data.merchant){setScanNotice('Photo se data nahi mil saka, manually bhar lein.');return}
+      setForm(f=>({
+        ...f,
+        amount:(!f.amount&&data.amount)?String(data.amount):f.amount,
+        date:data.date||f.date,
+        category:(!f.category||f.category==='Food')&&data.category_guess&&categories.includes(data.category_guess)?data.category_guess:f.category,
+        merchant:!f.merchant&&data.merchant?data.merchant:f.merchant,
+      }));
+      setScanNotice(data.confidence==='low'?'Kuch fields shayad ghalat hon, verify kar lein.':'Receipt se data bhar diya gaya — verify kar lein.');
+    }catch{
+      setScanNotice('Photo se data nahi mil saka, manually bhar lein.');
+    }finally{
+      setScanningReceipt(false);
+    }
   }
   function removeAttachment(){setAttachmentFile(null);setAttachmentRemove(Boolean(form.attachment_path));setAttachmentError('');if(attachmentInputRef.current)attachmentInputRef.current.value='';}
   async function uploadAttachment(transactionId,file){
@@ -209,7 +242,7 @@ export default function WalletModal(){
       {isSavings&&<><label>Savings category<select value={form.goal_id} onChange={e=>setField('goal_id',e.target.value)} required><option value="">Select savings goal</option><option value="general">General Savings</option>{goals.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>{kind==='savings_add'?'Save from':'Use from'}<select value={form.method} onChange={e=>setField('method',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label></>}
       {isTransit&&<label>Load from<select value={form.from} onChange={e=>setField('from',e.target.value)}><option value="cash">Cash</option><option value="online">Online</option></select></label>}
       {isTransfer&&<><label>{kind==='withdraw'?'Withdraw from':'Transfer from'}<select value={form.from} onChange={e=>setField('from',e.target.value)}>{kind==='withdraw'?<option value="online">Online</option>:<><option value="online">Online</option><option value="cash">Cash</option></>}</select></label>{kind==='transfer'&&<label>Transfer to<input value={form.from==='cash'?'Online':'Cash'} readOnly/></label>}</>}
-      <label className="full wallet-attachment-field">Attach receipt (optional)<input ref={attachmentInputRef} id="wallet-attachment" type="file" accept="image/*" onChange={handleAttachmentChange} disabled={!user}/>{!user&&<small>Receipt uploads are available after you create an account.</small>}{attachmentPreview&&<div className="wallet-attachment-preview"><img src={attachmentPreview} alt="Receipt preview"/><button type="button" className="table-action delete" onClick={removeAttachment}>Remove</button></div>}{!attachmentPreview&&form.attachment_path&&!attachmentRemove&&<div className="wallet-current-attachment"><span>📎 Receipt attached</span><button type="button" className="table-action delete" onClick={removeAttachment}>Remove</button></div>}{!attachmentPreview&&attachmentRemove&&<small className="wallet-attachment-removed">The current attachment will be removed when you save.</small>}{attachmentError&&<small className="wallet-attachment-error">{attachmentError}</small>}</label>
+      <label className="full wallet-attachment-field">Attach receipt (optional)<input ref={attachmentInputRef} id="wallet-attachment" type="file" accept="image/*" onChange={handleAttachmentChange} disabled={!user}/>{!user&&<small>Receipt uploads are available after you create an account.</small>}{attachmentPreview&&<div className="wallet-attachment-preview"><img src={attachmentPreview} alt="Receipt preview"/><button type="button" className="table-action delete" onClick={removeAttachment}>Remove</button></div>}{!attachmentPreview&&form.attachment_path&&!attachmentRemove&&<div className="wallet-current-attachment"><span>📎 Receipt attached</span><button type="button" className="table-action delete" onClick={removeAttachment}>Remove</button></div>}{!attachmentPreview&&attachmentRemove&&<small className="wallet-attachment-removed">The current attachment will be removed when you save.</small>}{attachmentError&&<small className="wallet-attachment-error">{attachmentError}</small>}{scanningReceipt&&<small className="wallet-attachment-scanning">🔍 Receipt scan ho raha hai…</small>}{!scanningReceipt&&scanNotice&&<small className="wallet-attachment-scan-notice">{scanNotice}</small>}</label>
       <label className="full">Notes<textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="Add a note if needed"/></label>
     </div></div>
     <div className="wallet-modal-mobile-flow">
