@@ -180,6 +180,17 @@ export default function WalletShell({
               + Expense
             </button>
 
+            <button
+              className="wallet-btn"
+              onClick={() =>
+                protectedAction(() =>
+                  window.dispatchEvent(new CustomEvent('wallet:scan-receipt'))
+                )
+              }
+            >
+              📷 Scan Receipt
+            </button>
+
 
             {saving && (
               <span className="wallet-saving">
@@ -209,6 +220,7 @@ export default function WalletShell({
           <section className="wallet-more-sheet" role="dialog" aria-modal="true" aria-label="More wallet tools">
             <div className="wallet-more-head"><strong>More</strong><button type="button" onClick={() => setMoreOpen(false)} aria-label="Close">×</button></div>
             <div className="wallet-more-grid">
+              <button type="button" className="wallet-more-scan-btn" onClick={() => { setMoreOpen(false); protectedAction(() => window.dispatchEvent(new CustomEvent('wallet:scan-receipt'))); }}><i>📷</i><span>Scan Receipt</span><b>→</b></button>
               {NAV.slice(2).map(([href, ic, label]) => <Link key={href} href={href} onClick={() => setMoreOpen(false)}><i>{ic}</i><span>{label}</span><b>→</b></Link>)}
             </div>
           </section>
