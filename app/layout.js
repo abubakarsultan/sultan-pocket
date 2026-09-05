@@ -8,6 +8,7 @@ import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import Assistant from '@/components/assistant/Assistant';
 import PageTransition from '@/components/PageTransition';
 import SmoothScrollProvider from '@/components/SmoothScrollProvider';
+import HideWhenStandalone from '@/components/HideWhenStandalone';
 
 export async function generateMetadata() {
   const fallback = {
@@ -53,7 +54,7 @@ export default function RootLayout({ children }) {
           <SmoothScrollProvider>
           <Navbar />
           <div id="main-content"><PageTransition>{children}</PageTransition></div>
-          <Footer />
+          <HideWhenStandalone><Footer /></HideWhenStandalone>
           <Assistant />
           </SmoothScrollProvider>
         </AuthProvider>

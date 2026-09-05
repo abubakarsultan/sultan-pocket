@@ -47,6 +47,7 @@ export default function HomePage() {
               <Link href="/expense-tracker" className="btn hero-btn-secondary">Open expense tracker</Link>
             </div>
             <div className="hero-trust"><span>✓ Cash & Online</span><span>✓ Savings</span><span>✓ Monthly tracking</span></div>
+            <a href="/downloads/sultan-pocket.apk" download className="btn hero-btn-secondary hero-apk-download">⬇ Download Android APK</a>
           </div>
 
           <AnimatedProductPreview />

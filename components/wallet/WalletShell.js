@@ -95,6 +95,8 @@ export default function WalletShell({
             {user ? '← Main dashboard' : '← Sultan Pocket home'}
           </Link>
 
+          <Link href="/contact">Contact</Link>
+
           {user ? (
             <Link
               href={`/u/${encodeURIComponent(
@@ -222,6 +224,7 @@ export default function WalletShell({
             <div className="wallet-more-grid">
               <button type="button" className="wallet-more-scan-btn" onClick={() => { setMoreOpen(false); protectedAction(() => window.dispatchEvent(new CustomEvent('wallet:scan-receipt'))); }}><i>📷</i><span>Scan Receipt</span><b>→</b></button>
               {NAV.slice(2).map(([href, ic, label]) => <Link key={href} href={href} onClick={() => setMoreOpen(false)}><i>{ic}</i><span>{label}</span><b>→</b></Link>)}
+              <Link href="/contact" onClick={() => setMoreOpen(false)}><i>✉️</i><span>Contact</span><b>→</b></Link>
             </div>
           </section>
         </div>}

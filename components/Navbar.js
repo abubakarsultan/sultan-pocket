@@ -7,6 +7,7 @@ import { useAuth } from './AuthProvider';
 import ProfileMenu from './ProfileMenu';
 import ThemeToggle from './ThemeToggle';
 import { supabase } from '@/lib/supabaseClient';
+import { useStandalone } from '@/lib/useStandalone';
 
 const LINKS = [
   ['/', 'Home'], ['/services', 'Features'], ['/about', 'About'], ['/blog', 'Blog'], ['/faq', 'FAQ'], ['/contact', 'Contact'],
@@ -17,6 +18,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const standalone = useStandalone();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -35,6 +37,8 @@ export default function Navbar() {
   }, [open]);
 
   const isActive = (href) => href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+
+  if (standalone) return null;
 
   async function signOut() {
     setOpen(false);
