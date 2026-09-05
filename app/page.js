@@ -4,6 +4,7 @@ import ScrollReveal from '@/components/ScrollReveal';
 import AnimatedProductPreview from '@/components/home/AnimatedProductPreview';
 import BentoFeatures from '@/components/home/BentoFeatures';
 import AnimatedSteps from '@/components/home/AnimatedSteps';
+import TryItWidget from '@/components/home/TryItWidget';
 import { getPageSeo, buildPageMetadata } from '@/lib/pageSeo';
 
 export const revalidate = 60;
@@ -19,9 +20,9 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  ['01', 'Create your account', 'Sign up with your name, username, email, and password.'],
-  ['02', 'Record your money', 'Add income, expenses, transfers, savings, borrowing, and repayments.'],
-  ['03', 'Understand your month', 'Use your wallet and reports to see where your money is going.'],
+  ['01', 'Sign up free', 'Create your account with a name, username, email, and password — takes about a minute.', '📝'],
+  ['02', 'Add your first transaction', 'Record an income, expense, transfer, or savings entry — or just type it in plain language.', '💳'],
+  ['03', 'See your money clearly', 'Your dashboard and charts show balances, categories, and trends automatically.', '📊'],
 ];
 
 const FAQS = [
@@ -55,7 +56,21 @@ export default function HomePage() {
       <ScrollReveal as="section" className="section-block section-problem">
         <div className="container split-section">
           <div><span className="section-label">THE PROBLEM</span><h2>Money gets confusing when every payment lives somewhere different.</h2><p>Cash in your pocket, money in the bank, savings set aside, transport credit and everyday spending are easy to lose track of when they are scattered across notes and apps.</p></div>
-          <div className="benefit-list"><div><b>01</b><span><strong>See the whole picture</strong><small>One wallet keeps the balances that matter visible together.</small></span></div><div><b>02</b><span><strong>Track the movement</strong><small>Record where money came from, where it went, and why.</small></span></div><div><b>03</b><span><strong>Make the next decision</strong><small>Use your month to decide what to save, spend or adjust.</small></span></div></div>
+          <div className="before-after">
+            <div className="before-after-col before-col"><span className="before-after-label">😵‍💫 THE OLD WAY</span>
+              <div><i>📓</i><span>A notebook you forget to update</span></div>
+              <div><i>💬</i><span>WhatsApp messages to yourself</span></div>
+              <div><i>🧠</i><span>Trying to remember where it went</span></div>
+              <div><i>❓</i><span>No real answer for &ldquo;how much do I have?&rdquo;</span></div>
+            </div>
+            <div className="before-after-arrow" aria-hidden="true">→</div>
+            <div className="before-after-col after-col"><span className="before-after-label">✨ WITH SULTAN POCKET</span>
+              <div><i>💳</i><span>Every rupee logged in one wallet</span></div>
+              <div><i>✦</i><span>Just type it, in your own words</span></div>
+              <div><i>📊</i><span>Categories and trends, automatically</span></div>
+              <div><i>✓</i><span>Your balance, always up to date</span></div>
+            </div>
+          </div>
         </div>
       </ScrollReveal>
 
@@ -70,6 +85,20 @@ export default function HomePage() {
         <div className="container">
           <div className="section-heading"><span>HOW IT WORKS</span><h2>Simple from day one.</h2><p>Start small, keep your records consistent, and let your wallet tell the story of your money.</p></div>
           <AnimatedSteps steps={STEPS} />
+        </div>
+      </ScrollReveal>
+
+      <ScrollReveal as="section" className="section-block">
+        <div className="container approach-section">
+          <span className="section-label">OUR APPROACH</span>
+          <h2>Built for one person's real money, first.</h2>
+          <p>Sultan Pocket started as a simple wallet for tracking everyday spending — no ads, no data sharing, no unnecessary complexity. It stays that way: your records are private to your account, the tools are built around how money actually moves day to day, and every feature exists because it was genuinely needed, not because it looks good on a features page.</p>
+        </div>
+      </ScrollReveal>
+
+      <ScrollReveal as="section" className="section-block">
+        <div className="container">
+          <TryItWidget />
         </div>
       </ScrollReveal>
 

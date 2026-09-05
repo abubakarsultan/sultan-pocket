@@ -7,6 +7,7 @@ import { useWallet } from './WalletProvider';
 import AnimatedMoney from './AnimatedNumber';
 import { supabase } from '@/lib/supabaseClient';
 import SpotlightCard from '@/components/SpotlightCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import {
   money,
@@ -98,6 +99,14 @@ function Actions({ items }) {
           Guest mode: transactions are saved only on this device. You can save up to 3 transactions; create a free account for unlimited cloud storage.
         </small>
       )}
+
+      <button
+        type="button"
+        className="wallet-action-ai-hint"
+        onClick={() => window.dispatchEvent(new CustomEvent('sultan-pocket:assistant', { detail: 'spent 500 on food' }))}
+      >
+        <span>✦</span> Or just tell me: <b>&ldquo;spent 500 on food&rdquo;</b>
+      </button>
 
     </section>
   );
@@ -428,6 +437,17 @@ function DashboardInner() {
       </div>
 
       <div className="wallet-dashboard-actions"><Actions items={actions} /></div>
+
+      {user && tx.some(t => monthOf(t.date) === month) && (
+        <Link href={`${basePath}/wrapped`} className="wrapped-teaser-card">
+          <span className="wrapped-teaser-icon">✦</span>
+          <span>
+            <b>View your {monthLabel(month)} Wrapped</b>
+            <small>A quick, shareable look back at your month</small>
+          </span>
+          <span className="wrapped-teaser-arrow">→</span>
+        </Link>
+      )}
 
       <UpcomingRecurring
         rules={state?.recurringRules||[]}
@@ -2639,6 +2659,191 @@ function BalanceStat({
         {money(value, currency)}
       </strong>
 
+    </div>
+  );
+}
+
+
+/* =========================
+   SPENDING WRAPPED
+========================= */
+
+export function SpendingWrapped() {
+  return <Page><SpendingWrappedInner /></Page>;
+}
+
+function buildWrappedCards(s, prevStats, month, currency) {
+  const cards = [];
+  const totalSpent = s.expenses;
+  const prevSpent = prevStats.expenses;
+  const spentChangePct = prevSpent > 0 ? Math.round(((totalSpent - prevSpent) / prevSpent) * 100) : null;
+
+  cards.push({
+    kind: 'spent',
+    kicker: 'TOTAL SPENT',
+    value: totalSpent,
+    label: monthLabel(month),
+    note: spentChangePct === null
+      ? (totalSpent > 0 ? 'No spending recorded last month to compare against.' : 'No expenses recorded yet this month.')
+      : `${Math.abs(spentChangePct)}% ${spentChangePct >= 0 ? 'more' : 'less'} than last month`,
+  });
+
+  const categoryEntries = Object.entries(s.byCategory).sort((a, b) => b[1] - a[1]);
+  if (categoryEntries.length && totalSpent > 0) {
+    const [topName, topAmount] = categoryEntries[0];
+    const pct = Math.round((topAmount / totalSpent) * 100);
+    cards.push({
+      kind: 'category',
+      kicker: 'TOP CATEGORY',
+      value: topAmount,
+      label: topName,
+      note: `${pct}% of everything you spent this month`,
+    });
+  }
+
+  const hasSavings = s.savingsAdded > 0;
+  cards.push({
+    kind: hasSavings ? 'saved' : 'income',
+    kicker: hasSavings ? 'SAVED THIS MONTH' : 'INCOME THIS MONTH',
+    value: hasSavings ? s.savingsAdded : s.income,
+    label: hasSavings ? 'Moved into savings' : 'Money coming in',
+    note: hasSavings
+      ? 'Money set aside instead of spent — nice work.'
+      : (s.income > 0 ? 'Keep this flowing to build toward your goals.' : 'No income recorded this month yet.'),
+  });
+
+  cards.push({
+    kind: 'closing',
+    kicker: 'YOUR MONTH, START TO FINISH',
+    opening: s.openingBalances.total,
+    closing: s.closingBalances.total,
+    label: monthLabel(month),
+    currency,
+  });
+
+  return cards;
+}
+
+function SpendingWrappedInner() {
+  const { tx, month, s, currency } = useData();
+  const router = useRouter();
+  const prevStats = useMemo(() => stats(tx, shiftMonth(month, -1)), [tx, month]);
+  const cards = useMemo(() => buildWrappedCards(s, prevStats, month, currency), [s, prevStats, month, currency]);
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const shareRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const go = (next) => {
+    if (next < 0 || next >= cards.length) return;
+    setDirection(next > index ? 1 : -1);
+    setIndex(next);
+  };
+
+  async function downloadImage() {
+    if (!shareRef.current || downloading) return;
+    setDownloading(true);
+    try {
+      const htmlToImage = await import('html-to-image');
+      const dataUrl = await htmlToImage.toPng(shareRef.current, { pixelRatio: 2, cacheBust: true });
+      const link = document.createElement('a');
+      link.download = `sultan-pocket-wrapped-${month}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      // Sharing is a nice-to-have; a failed export shouldn't break the page.
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  const active = cards[index];
+  const topCategoryCard = cards.find(c => c.kind === 'category');
+
+  return (
+    <div className="wrapped-page">
+      <button type="button" className="wrapped-close" onClick={() => router.back()} aria-label="Close">×</button>
+
+      <div className="wrapped-progress" role="tablist" aria-label="Wrapped cards">
+        {cards.map((c, i) => (
+          <button
+            key={c.kind}
+            type="button"
+            role="tab"
+            aria-selected={i === index}
+            className={i <= index ? 'is-filled' : ''}
+            onClick={() => go(i)}
+          />
+        ))}
+      </div>
+
+      <div className="wrapped-stage">
+        <button type="button" className="wrapped-tap wrapped-tap-prev" aria-label="Previous" onClick={() => go(index - 1)} disabled={index === 0} />
+        <button type="button" className="wrapped-tap wrapped-tap-next" aria-label="Next" onClick={() => go(index + 1)} disabled={index === cards.length - 1} />
+
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <motion.div
+            key={active.kind}
+            custom={direction}
+            initial={{ opacity: 0, x: direction * 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -direction * 40 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className={`wrapped-card wrapped-card-${active.kind}`}
+          >
+            <span className="wrapped-kicker">{active.kicker}</span>
+            {active.kind === 'closing' ? (
+              <>
+                <div className="wrapped-closing-row">
+                  <div><small>Opening</small><strong><AnimatedMoney value={money(active.opening, currency)} /></strong></div>
+                  <span className="wrapped-closing-arrow">→</span>
+                  <div><small>Closing</small><strong><AnimatedMoney value={money(active.closing, currency)} /></strong></div>
+                </div>
+                <p className="wrapped-note">{active.label} · Sultan Pocket</p>
+              </>
+            ) : (
+              <>
+                <strong className="wrapped-value"><AnimatedMoney value={money(active.value, currency)} /></strong>
+                <p className="wrapped-label">{active.label}</p>
+                <p className="wrapped-note">{active.note}</p>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className="wrapped-controls">
+        {index < cards.length - 1 ? (
+          <button type="button" className="wallet-btn primary" onClick={() => go(index + 1)}>Next →</button>
+        ) : (
+          <button type="button" className="wallet-btn primary" onClick={downloadImage} disabled={downloading}>
+            {downloading ? 'Preparing image…' : '⬇ Download my Wrapped'}
+          </button>
+        )}
+      </div>
+
+      {/* Off-screen composite card captured for sharing */}
+      <div className="wrapped-share-capture" ref={shareRef} aria-hidden="true">
+        <div className="wrapped-share-inner">
+          <span className="wrapped-share-kicker">{monthLabel(month)}</span>
+          <h2>My Sultan Pocket Wrapped</h2>
+          <div className="wrapped-share-stat">
+            <small>Total spent</small>
+            <strong>{money(s.expenses, currency)}</strong>
+          </div>
+          {topCategoryCard && (
+            <div className="wrapped-share-stat">
+              <small>Top category</small>
+              <strong>{topCategoryCard.label} · {money(topCategoryCard.value, currency)}</strong>
+            </div>
+          )}
+          <div className="wrapped-share-stat">
+            <small>Closing balance</small>
+            <strong>{money(s.closingBalances.total, currency)}</strong>
+          </div>
+          <div className="wrapped-share-brand"><span>💳</span> Sultan Pocket</div>
+        </div>
+      </div>
     </div>
   );
 }
