@@ -858,3 +858,28 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 }
 @media(max-width:430px){.wallet-mobile-balance-hero strong{font-size:clamp(24px,8vw,31px);white-space:nowrap;letter-spacing:-.045em}.wallet-balance-strip-card{flex-basis:auto}.wallet-more-grid{grid-template-columns:1fr}.wallet-mobile-type-grid{gap:7px}.wallet-mobile-type-grid button{min-height:66px;padding:9px}.wallet-mobile-amount-display input{font-size:40px}.feature-bento-grid{grid-template-columns:1fr}.feature-bento-0,.feature-bento-3{grid-column:span 1}.footer-newsletter form{display:grid}.footer-newsletter button{min-height:40px}}
 @media(prefers-reduced-motion:reduce){.site-navbar,.site-navbar-inner,.mobile-nav-panel,.theme-toggle-track,.theme-toggle-thumb,.feature-bento-card{transition:none}.wallet-filter-sheet{animation:none}.sultan-pocket-ai-launcher{transition:none}}
+
+/* ===== App-only shell (Android/PWA standalone mode) ===== */
+.app-shell{display:flex;flex-direction:column;min-height:100dvh}
+.app-shell-topbar{position:sticky;top:0;z-index:120;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:var(--surface);border-bottom:1px solid var(--border)}
+.app-shell-brand{display:flex;align-items:center;gap:8px;color:var(--text);font-weight:800;font-size:14px;text-decoration:none}
+.app-shell-brand img{border-radius:8px;display:block}
+.app-shell-topbar-actions{display:flex;align-items:center;gap:10px}
+.app-shell-content{flex:1;padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+.app-shell-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:100;display:grid;grid-template-columns:repeat(4,1fr);padding:7px 6px calc(7px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -6px 25px #00000012}
+.app-shell-bottom-nav a,.app-shell-bottom-nav button{min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:transparent;border-radius:10px;color:var(--text-faint);font-size:9px;font-weight:700;text-decoration:none}
+.app-shell-bottom-nav i{font-style:normal;font-size:18px;line-height:1}
+.app-shell-bottom-nav a.active,.app-shell-bottom-nav button.active{color:var(--signal);background:var(--signal-tint)}
+.app-shell-more-backdrop{position:fixed;inset:0;z-index:350;background:#0007;display:flex;align-items:flex-end}
+.app-shell-more-sheet{width:100%;background:var(--surface);border-top:1px solid var(--border);border-radius:18px 18px 0 0;padding:15px 16px calc(15px + env(safe-area-inset-bottom));box-shadow:0 -18px 55px #0004}
+.app-shell-more-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.app-shell-more-head strong{font-size:15px}
+.app-shell-more-head button{border:0;background:transparent;font-size:24px;color:var(--text-faint)}
+.app-shell-more-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.app-shell-more-grid a{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface-2);border-radius:11px;padding:11px;color:var(--text);text-decoration:none}
+.app-shell-more-grid i{font-style:normal;font-size:16px;color:var(--signal)}
+.app-shell-more-grid span{font-size:11px;font-weight:650}
+.app-shell-more-grid b{font-size:11px;color:var(--text-faint);font-weight:400}
+@media(max-width:430px){.app-shell-more-grid{grid-template-columns:1fr}}
+body.is-app-shell .sultan-pocket-ai-launcher{bottom:calc(96px + env(safe-area-inset-bottom))}
+body.is-app-shell .sultan-pocket-ai-restore{bottom:calc(92px + env(safe-area-inset-bottom))}
